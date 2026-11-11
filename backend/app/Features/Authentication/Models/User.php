@@ -1,15 +1,32 @@
 <?php
 
-namespace App\Models;
+namespace App\Features\Authentication\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): UserFactory
+    {
+        return UserFactory::new();
+    }
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'users';
 
     /**
      * The attributes that are mass assignable.
@@ -44,4 +61,3 @@ class User extends Authenticatable
         ];
     }
 }
-
