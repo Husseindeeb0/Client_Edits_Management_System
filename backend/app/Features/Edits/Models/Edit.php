@@ -2,6 +2,7 @@
 
 namespace App\Features\Edits\Models;
 
+use App\Features\Attachments\Models\Attachment;
 use App\Features\Projects\Models\Project;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

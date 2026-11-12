@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Features\Edits\Models;
+namespace App\Features\Attachments\Models;
 
+use App\Features\Edits\Models\Edit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -37,4 +38,3 @@ class Attachment extends Model
         return $this->belongsTo(Edit::class);
     }
 }
-
