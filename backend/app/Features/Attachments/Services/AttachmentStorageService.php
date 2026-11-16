@@ -9,19 +9,23 @@ class AttachmentStorageService
 {
     /**
      * Delete an array of attachment file paths from the private local disk.
+     * Missing files are ignored.
      *
-     * @param array<int, string> $filePaths
+     * @param array<int, string|null> $filePaths
      */
     public function deleteFiles(array $filePaths): void
     {
-        $filtered = array_filter($filePaths);
+        $filtered = array_values(array_filter($filePaths));
+
         if (! empty($filtered)) {
             Storage::disk('local')->delete($filtered);
         }
     }
 
     /**
-     * Delete an attachment model record and its physical file safely.
+     * Delete an attachment record, then its physical file. The row is removed
+     * first so a storage failure can only leave an orphaned file, never a
+     * record pointing to a missing file.
      */
     public function deleteAttachmentRecordAndFile(Attachment $attachment): void
     {
@@ -29,9 +33,6 @@ class AttachmentStorageService
 
         $attachment->delete();
 
-        if ($filePath && Storage::disk('local')->exists($filePath)) {
-            Storage::disk('local')->delete($filePath);
-        }
+        $this->deleteFiles([$filePath]);
     }
 }
-

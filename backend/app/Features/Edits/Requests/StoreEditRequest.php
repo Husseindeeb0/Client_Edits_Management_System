@@ -2,6 +2,8 @@
 
 namespace App\Features\Edits\Requests;
 
+use App\Features\Edits\Enums\EditPriority;
+use App\Features\Edits\Enums\EditStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,8 +28,8 @@ class StoreEditRequest extends FormRequest
             'project_id' => ['required', 'integer', 'exists:projects,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'priority' => ['required', 'string', Rule::in(['High', 'Medium', 'Low'])],
-            'status' => ['required', 'string', Rule::in(['Pending', 'Confirmed', 'In Progress', 'Done', 'Cancelled'])],
+            'priority' => ['required', 'string', Rule::enum(EditPriority::class)],
+            'status' => ['required', 'string', Rule::enum(EditStatus::class)],
             'price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'is_paid' => ['sometimes', 'boolean'],
             'due_date' => ['nullable', 'date'],

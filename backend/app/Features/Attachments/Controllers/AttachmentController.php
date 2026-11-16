@@ -42,10 +42,10 @@ class AttachmentController extends Controller
 
         $attachments = $this->attachmentService->uploadAttachments($edit, $dto);
 
-        return response()->json([
-            'message' => 'Attachments uploaded successfully.',
-            'data' => AttachmentResource::collection(collect($attachments)),
-        ], 201);
+        return AttachmentResource::collection($attachments)
+            ->additional(['message' => 'Attachments uploaded successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**

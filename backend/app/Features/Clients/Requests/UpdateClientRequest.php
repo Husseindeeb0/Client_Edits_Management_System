@@ -36,8 +36,7 @@ class UpdateClientRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $allowedFields = ['name', 'phone_number', 'email', 'last_follow_up_date'];
-            $intersect = array_intersect_key($this->all(), array_flip($allowedFields));
+            $intersect = array_intersect_key($this->all(), $this->rules());
 
             if (empty($intersect)) {
                 $validator->errors()->add('payload', 'At least one field must be provided for update.');

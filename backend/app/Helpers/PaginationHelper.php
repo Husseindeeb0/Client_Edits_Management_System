@@ -5,6 +5,19 @@ namespace App\Helpers;
 class PaginationHelper
 {
     /**
+     * Validation rules for the per_page query parameter, shared by every
+     * paginated list request.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public static function rules(): array
+    {
+        return [
+            'per_page' => ['nullable', 'integer', 'min:1'],
+        ];
+    }
+
+    /**
      * Resolve and normalize the requested per_page value.
      */
     public static function resolvePerPage(mixed $perPage): int

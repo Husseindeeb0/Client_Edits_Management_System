@@ -35,7 +35,7 @@ class AuthenticationTest extends TestCase
         $response->assertOk()
             ->assertJson([
                 'message' => 'Logged in successfully.',
-                'user' => [
+                'data' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => 'admin@example.com',
@@ -59,7 +59,7 @@ class AuthenticationTest extends TestCase
 
         $response->assertOk();
 
-        $user = $response->json('user');
+        $user = $response->json('data');
 
         // Only id, name, email should be present
         $this->assertArrayHasKey('id', $user);
@@ -122,7 +122,7 @@ class AuthenticationTest extends TestCase
 
         $response->assertOk()
             ->assertExactJson([
-                'user' => [
+                'data' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
@@ -140,7 +140,7 @@ class AuthenticationTest extends TestCase
 
         $response->assertOk();
 
-        $userPayload = $response->json('user');
+        $userPayload = $response->json('data');
 
         $this->assertArrayHasKey('id', $userPayload);
         $this->assertArrayHasKey('name', $userPayload);
@@ -206,10 +206,46 @@ class AuthenticationTest extends TestCase
     public function test_admin_seeder_does_not_create_duplicate_users(): void
     {
         $this->seed(AdminUserSeeder::class);
-        $this->assertEquals(1, User::where('email', env('ADMIN_EMAIL', 'admin@example.com'))->count());
+        $this->assertEquals(1, User::where('email', config('auth.admin.email'))->count());
 
         // Run seeder second time — count must remain 1
         $this->seed(AdminUserSeeder::class);
-        $this->assertEquals(1, User::where('email', env('ADMIN_EMAIL', 'admin@example.com'))->count());
+        $this->assertEquals(1, User::where('email', config('auth.admin.email'))->count());
+    }
+
+    public function test_admin_seeder_uses_configured_credentials(): void
+    {
+        config(['auth.admin' => ['name' => 'Owner', 'email' => 'owner@example.com', 'password' => 'S3cure-Pass!']]);
+
+        $this->seed(AdminUserSeeder::class);
+
+        $admin = User::where('email', 'owner@example.com')->sole();
+        $this->assertSame('Owner', $admin->name);
+        $this->assertTrue(Hash::check('S3cure-Pass!', $admin->password));
+    }
+
+    public function test_admin_seeder_refuses_missing_password_in_production(): void
+    {
+        config(['auth.admin.password' => null]);
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->expectException(\RuntimeException::class);
+
+        try {
+            // Run the seeder directly: db:seed asks for confirmation in production
+            (new AdminUserSeeder)->run();
+        } finally {
+            $this->assertSame(0, User::count());
+        }
+    }
+
+    public function test_admin_seeder_refuses_development_password_in_production(): void
+    {
+        config(['auth.admin.password' => AdminUserSeeder::DEVELOPMENT_PASSWORD]);
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->expectException(\RuntimeException::class);
+
+        (new AdminUserSeeder)->run();
     }
 }

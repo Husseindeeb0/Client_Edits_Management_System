@@ -34,8 +34,7 @@ class UpdateCompanyRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $allowedFields = ['name', 'client_id'];
-            $intersect = array_intersect_key($this->all(), array_flip($allowedFields));
+            $intersect = array_intersect_key($this->all(), $this->rules());
 
             if (empty($intersect)) {
                 $validator->errors()->add('payload', 'At least one field must be provided for update.');

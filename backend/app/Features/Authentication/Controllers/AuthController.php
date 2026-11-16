@@ -29,10 +29,9 @@ class AuthController extends Controller
 
         $user = $this->authService->login($dto, $request);
 
-        return response()->json([
-            'message' => 'Logged in successfully.',
-            'user' => new AuthenticatedUserResource($user),
-        ]);
+        return (new AuthenticatedUserResource($user))
+            ->additional(['message' => 'Logged in successfully.'])
+            ->response();
     }
 
     /**
@@ -50,10 +49,8 @@ class AuthController extends Controller
     /**
      * Return the currently authenticated administrator.
      */
-    public function me(Request $request): JsonResponse
+    public function me(Request $request): AuthenticatedUserResource
     {
-        return response()->json([
-            'user' => new AuthenticatedUserResource($request->user()),
-        ]);
+        return new AuthenticatedUserResource($request->user());
     }
 }

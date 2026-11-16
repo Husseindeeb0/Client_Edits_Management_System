@@ -4,6 +4,7 @@ namespace App\Features\Companies\Models;
 
 use App\Features\Clients\Models\Client;
 use App\Features\Projects\Models\Project;
+use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
+    /** @use HasFactory<CompanyFactory> */
     use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): CompanyFactory
+    {
+        return CompanyFactory::new();
+    }
 
     /**
      * The table associated with the model.

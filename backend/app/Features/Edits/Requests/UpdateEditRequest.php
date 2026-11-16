@@ -2,6 +2,8 @@
 
 namespace App\Features\Edits\Requests;
 
+use App\Features\Edits\Enums\EditPriority;
+use App\Features\Edits\Enums\EditStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -27,8 +29,8 @@ class UpdateEditRequest extends FormRequest
             'project_id' => ['sometimes', 'required', 'integer', 'exists:projects,id'],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'priority' => ['sometimes', 'required', 'string', Rule::in(['High', 'Medium', 'Low'])],
-            'status' => ['sometimes', 'required', 'string', Rule::in(['Pending', 'Confirmed', 'In Progress', 'Done', 'Cancelled'])],
+            'priority' => ['sometimes', 'required', 'string', Rule::enum(EditPriority::class)],
+            'status' => ['sometimes', 'required', 'string', Rule::enum(EditStatus::class)],
             'price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'is_paid' => ['sometimes', 'required', 'boolean'],
             'due_date' => ['sometimes', 'nullable', 'date'],
@@ -41,8 +43,7 @@ class UpdateEditRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
-            $allowedFields = ['project_id', 'title', 'description', 'priority', 'status', 'price', 'is_paid', 'due_date'];
-            $intersect = array_intersect_key($this->all(), array_flip($allowedFields));
+            $intersect = array_intersect_key($this->all(), $this->rules());
 
             if (empty($intersect)) {
                 $validator->errors()->add('payload', 'At least one field must be provided for update.');

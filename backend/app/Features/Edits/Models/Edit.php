@@ -3,7 +3,10 @@
 namespace App\Features\Edits\Models;
 
 use App\Features\Attachments\Models\Attachment;
+use App\Features\Edits\Enums\EditPriority;
+use App\Features\Edits\Enums\EditStatus;
 use App\Features\Projects\Models\Project;
+use Database\Factories\EditFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +14,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Edit extends Model
 {
+    /** @use HasFactory<EditFactory> */
     use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): EditFactory
+    {
+        return EditFactory::new();
+    }
 
     /**
      * The table associated with the model.
@@ -44,6 +56,8 @@ class Edit extends Model
     protected function casts(): array
     {
         return [
+            'priority' => EditPriority::class,
+            'status' => EditStatus::class,
             'price' => 'decimal:2',
             'is_paid' => 'boolean',
             'due_date' => 'date',

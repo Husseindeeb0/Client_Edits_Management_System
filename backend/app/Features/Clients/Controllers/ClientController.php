@@ -5,6 +5,7 @@ namespace App\Features\Clients\Controllers;
 use App\Features\Clients\DTOs\CreateClientDTO;
 use App\Features\Clients\DTOs\UpdateClientDTO;
 use App\Features\Clients\Models\Client;
+use App\Features\Clients\Requests\ListClientsRequest;
 use App\Features\Clients\Requests\StoreClientRequest;
 use App\Features\Clients\Requests\UpdateClientRequest;
 use App\Features\Clients\Resources\ClientDetailsResource;
@@ -13,7 +14,6 @@ use App\Features\Clients\Resources\ClientResource;
 use App\Features\Clients\Services\ClientService;
 use App\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controller;
 
@@ -27,18 +27,11 @@ class ClientController extends Controller
     /**
      * Retrieve a paginated list of clients.
      */
-    public function getPaginatedClients(Request $request): AnonymousResourceCollection
+    public function getPaginatedClients(ListClientsRequest $request): AnonymousResourceCollection
     {
-        $perPage = PaginationHelper::resolvePerPage($request->query('per_page'));
+        $perPage = PaginationHelper::resolvePerPage($request->validated('per_page'));
 
-        $search = $request->query('search');
-        if (is_string($search)) {
-            $search = trim($search);
-        } else {
-            $search = null;
-        }
-
-        $clients = $this->clientService->getPaginatedClients($search, $perPage);
+        $clients = $this->clientService->getPaginatedClients($request->validated('search'), $perPage);
 
         return ClientListResource::collection($clients);
     }
@@ -77,17 +70,7 @@ class ClientController extends Controller
      */
     public function updateClient(UpdateClientRequest $request, Client $client): ClientResource
     {
-        $allowedKeys = ['name', 'phone_number', 'email', 'last_follow_up_date'];
-        $validatedData = $request->validated();
-        $filteredData = [];
-
-        foreach ($allowedKeys as $key) {
-            if (array_key_exists($key, $validatedData)) {
-                $filteredData[$key] = $validatedData[$key];
-            }
-        }
-
-        $dto = new UpdateClientDTO($filteredData);
+        $dto = new UpdateClientDTO($request->validated());
         $updatedClient = $this->clientService->updateClient($client, $dto);
 
         return new ClientResource($updatedClient);

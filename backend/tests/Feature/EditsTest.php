@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Features\Authentication\Models\User;
 use App\Features\Clients\Models\Client;
 use App\Features\Companies\Models\Company;
+use App\Features\Edits\Enums\EditPriority;
 use App\Features\Edits\Models\Edit;
 use App\Features\Projects\Models\Project;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -292,7 +293,7 @@ class EditsTest extends TestCase
 
         $edit->refresh();
         $this->assertEquals('Updated Title', $edit->title);
-        $this->assertEquals('Low', $edit->priority);  // unchanged
+        $this->assertSame(EditPriority::Low, $edit->priority);  // unchanged
     }
 
     public function test_update_edit_rejects_empty_payload(): void

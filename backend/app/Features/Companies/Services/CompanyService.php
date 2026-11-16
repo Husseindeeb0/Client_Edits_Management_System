@@ -7,6 +7,7 @@ use App\Features\Attachments\Services\AttachmentStorageService;
 use App\Features\Companies\DTOs\CreateCompanyDTO;
 use App\Features\Companies\DTOs\UpdateCompanyDTO;
 use App\Features\Companies\Models\Company;
+use App\Features\Edits\Enums\EditStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +16,8 @@ use Illuminate\Validation\ValidationException;
 class CompanyService
 {
     public function __construct(
-        protected ?AttachmentStorageService $attachmentStorageService = null,
+        protected AttachmentStorageService $attachmentStorageService,
     ) {
-        $this->attachmentStorageService = $this->attachmentStorageService ?? new AttachmentStorageService();
     }
 
     /**
@@ -25,10 +25,10 @@ class CompanyService
      */
     public function getPaginatedCompanies(?string $search, int $perPage): LengthAwarePaginator
     {
-        $query = Company::query()->with('client');
+        $query = Company::query()->with('client:id,name');
 
-        if ($search !== null && trim($search) !== '') {
-            $term = '%'.trim($search).'%';
+        if ($search !== null) {
+            $term = '%'.$search.'%';
             $query->where(function (Builder $q) use ($term) {
                 $q->where('name', 'like', $term)
                     ->orWhereHas('client', function (Builder $clientQuery) use ($term) {
@@ -62,53 +62,32 @@ class CompanyService
     }
 
     /**
-     * Partially update an existing company.
+     * Partially update a company with the validated fields that were sent.
      */
     public function updateCompany(Company $company, UpdateCompanyDTO $dto): Company
     {
-        $attributesToUpdate = [];
-
-        if ($dto->has('name')) {
-            $attributesToUpdate['name'] = $dto->get('name');
-        }
-
-        if ($dto->has('client_id')) {
-            $attributesToUpdate['client_id'] = $dto->get('client_id');
-        }
-
-        if (! empty($attributesToUpdate)) {
-            $company->update($attributesToUpdate);
-        }
+        $company->update($dto->toArray());
 
         return $company->load('client');
     }
 
     /**
-     * Delete a company if there are no descendant active edits.
+     * Delete a company if none of its edits are still active.
      *
      * @throws ValidationException
      */
     public function deleteCompany(Company $company): void
     {
-        $activeStatuses = ['Pending', 'Confirmed', 'In Progress'];
-
-        // Gather all descendant attachment file paths before deleting database records
-        $filePaths = Attachment::query()
-            ->whereHas('edit.project', function (Builder $query) use ($company) {
-                $query->where('company_id', $company->id);
-            })
-            ->pluck('file_path')
-            ->all();
-
-        DB::transaction(function () use ($company, $activeStatuses) {
+        $filePaths = DB::transaction(function () use ($company) {
+            // Lock the company row so concurrent requests can't add active edits mid-check
             $lockedCompany = Company::query()
-                ->where('id', $company->id)
+                ->whereKey($company->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
             $hasActiveEdits = $lockedCompany->projects()
-                ->whereHas('edits', function (Builder $query) use ($activeStatuses) {
-                    $query->whereIn('status', $activeStatuses);
+                ->whereHas('edits', function (Builder $query) {
+                    $query->whereIn('status', EditStatus::active());
                 })
                 ->exists();
 
@@ -118,10 +97,20 @@ class CompanyService
                 ]);
             }
 
+            // Collect file paths before the cascade removes the attachment rows
+            $filePaths = Attachment::query()
+                ->whereHas('edit.project', function (Builder $query) use ($lockedCompany) {
+                    $query->where('company_id', $lockedCompany->id);
+                })
+                ->pluck('file_path')
+                ->all();
+
             $lockedCompany->delete();
+
+            return $filePaths;
         });
 
-        // Clean up physical files after database transaction commits
+        // Remove physical files only after the transaction has committed
         $this->attachmentStorageService->deleteFiles($filePaths);
     }
 }

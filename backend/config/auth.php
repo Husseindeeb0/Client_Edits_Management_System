@@ -114,4 +114,23 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Administrator Account
+    |--------------------------------------------------------------------------
+    |
+    | Credentials used by the AdminUserSeeder to create the single admin
+    | account. They are read here (not with env() in the seeder) so they
+    | still work when the configuration is cached in production. There is no
+    | default password: the seeder only falls back to a development password
+    | outside production.
+    |
+    */
+
+    'admin' => [
+        'name' => env('ADMIN_NAME', 'Administrator'),
+        'email' => env('ADMIN_EMAIL', 'admin@example.com'),
+        'password' => env('ADMIN_PASSWORD'),
+    ],
+
 ];

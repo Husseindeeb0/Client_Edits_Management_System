@@ -5,6 +5,7 @@ namespace App\Features\Companies\Controllers;
 use App\Features\Companies\DTOs\CreateCompanyDTO;
 use App\Features\Companies\DTOs\UpdateCompanyDTO;
 use App\Features\Companies\Models\Company;
+use App\Features\Companies\Requests\ListCompaniesRequest;
 use App\Features\Companies\Requests\StoreCompanyRequest;
 use App\Features\Companies\Requests\UpdateCompanyRequest;
 use App\Features\Companies\Resources\CompanyDetailsResource;
@@ -13,7 +14,6 @@ use App\Features\Companies\Resources\CompanyResource;
 use App\Features\Companies\Services\CompanyService;
 use App\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controller;
 
@@ -27,18 +27,11 @@ class CompanyController extends Controller
     /**
      * Retrieve a paginated list of companies.
      */
-    public function getPaginatedCompanies(Request $request): AnonymousResourceCollection
+    public function getPaginatedCompanies(ListCompaniesRequest $request): AnonymousResourceCollection
     {
-        $perPage = PaginationHelper::resolvePerPage($request->query('per_page'));
+        $perPage = PaginationHelper::resolvePerPage($request->validated('per_page'));
 
-        $search = $request->query('search');
-        if (is_string($search)) {
-            $search = trim($search);
-        } else {
-            $search = null;
-        }
-
-        $companies = $this->companyService->getPaginatedCompanies($search, $perPage);
+        $companies = $this->companyService->getPaginatedCompanies($request->validated('search'), $perPage);
 
         return CompanyListResource::collection($companies);
     }
@@ -75,17 +68,7 @@ class CompanyController extends Controller
      */
     public function updateCompany(UpdateCompanyRequest $request, Company $company): CompanyResource
     {
-        $allowedKeys = ['name', 'client_id'];
-        $validatedData = $request->validated();
-        $filteredData = [];
-
-        foreach ($allowedKeys as $key) {
-            if (array_key_exists($key, $validatedData)) {
-                $filteredData[$key] = $validatedData[$key];
-            }
-        }
-
-        $dto = new UpdateCompanyDTO($filteredData);
+        $dto = new UpdateCompanyDTO($request->validated());
         $updatedCompany = $this->companyService->updateCompany($company, $dto);
 
         return new CompanyResource($updatedCompany);

@@ -4,26 +4,37 @@ namespace Database\Seeders;
 
 use App\Features\Authentication\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class AdminUserSeeder extends Seeder
 {
     /**
+     * Password used only outside production when ADMIN_PASSWORD is not set.
+     */
+    public const DEVELOPMENT_PASSWORD = 'password123';
+
+    /**
      * Run the database seeds.
+     *
+     * @throws RuntimeException When run in production without a real password.
      */
     public function run(): void
     {
-        $email = env('ADMIN_EMAIL', 'admin@example.com');
-        $name = env('ADMIN_NAME', 'Administrator');
-        $password = env('ADMIN_PASSWORD', 'password123');
+        $password = config('auth.admin.password');
+
+        if (app()->isProduction() && (blank($password) || $password === self::DEVELOPMENT_PASSWORD)) {
+            throw new RuntimeException(
+                'Set a strong ADMIN_PASSWORD in the environment before seeding the admin account in production.'
+            );
+        }
 
         User::updateOrCreate(
-            ['email' => $email],
+            ['email' => config('auth.admin.email')],
             [
-                'name' => $name,
-                'password' => Hash::make($password),
+                'name' => config('auth.admin.name'),
+                // Hashed automatically by the User model's "hashed" cast
+                'password' => $password ?: self::DEVELOPMENT_PASSWORD,
             ]
         );
     }
 }
-

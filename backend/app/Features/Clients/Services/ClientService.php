@@ -7,6 +7,7 @@ use App\Features\Attachments\Services\AttachmentStorageService;
 use App\Features\Clients\DTOs\CreateClientDTO;
 use App\Features\Clients\DTOs\UpdateClientDTO;
 use App\Features\Clients\Models\Client;
+use App\Features\Edits\Enums\EditStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +16,8 @@ use Illuminate\Validation\ValidationException;
 class ClientService
 {
     public function __construct(
-        protected ?AttachmentStorageService $attachmentStorageService = null,
+        protected AttachmentStorageService $attachmentStorageService,
     ) {
-        $this->attachmentStorageService = $this->attachmentStorageService ?? new AttachmentStorageService();
     }
 
     /**
@@ -27,8 +27,8 @@ class ClientService
     {
         $query = Client::query();
 
-        if ($search !== null && trim($search) !== '') {
-            $term = '%'.trim($search).'%';
+        if ($search !== null) {
+            $term = '%'.$search.'%';
             $query->where(function (Builder $q) use ($term) {
                 $q->where('name', 'like', $term)
                     ->orWhere('phone_number', 'like', $term)
@@ -61,62 +61,32 @@ class ClientService
     }
 
     /**
-     * Partially update an existing client using explicit attributes from DTO.
+     * Partially update a client with the validated fields that were sent.
      */
     public function updateClient(Client $client, UpdateClientDTO $dto): Client
     {
-        $attributesToUpdate = [];
-
-        if ($dto->has('name')) {
-            $attributesToUpdate['name'] = $dto->get('name');
-        }
-
-        if ($dto->has('phone_number')) {
-            $attributesToUpdate['phone_number'] = $dto->get('phone_number');
-        }
-
-        if ($dto->has('email')) {
-            $attributesToUpdate['email'] = $dto->get('email');
-        }
-
-        if ($dto->has('last_follow_up_date')) {
-            $attributesToUpdate['last_follow_up_date'] = $dto->get('last_follow_up_date');
-        }
-
-        if (! empty($attributesToUpdate)) {
-            $client->update($attributesToUpdate);
-        }
+        $client->update($dto->toArray());
 
         return $client;
     }
 
     /**
-     * Delete a client if there are no descendant active edits.
+     * Delete a client if none of its edits are still active.
      *
      * @throws ValidationException
      */
     public function deleteClient(Client $client): void
     {
-        $activeStatuses = ['Pending', 'Confirmed', 'In Progress'];
-
-        // Gather all descendant attachment file paths before deleting database records
-        $filePaths = Attachment::query()
-            ->whereHas('edit.project.company', function (Builder $query) use ($client) {
-                $query->where('client_id', $client->id);
-            })
-            ->pluck('file_path')
-            ->all();
-
-        DB::transaction(function () use ($client, $activeStatuses) {
-            // Lock client record for update to prevent concurrent race conditions
+        $filePaths = DB::transaction(function () use ($client) {
+            // Lock the client row so concurrent requests can't add active edits mid-check
             $lockedClient = Client::query()
-                ->where('id', $client->id)
+                ->whereKey($client->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
             $hasActiveEdits = $lockedClient->companies()
-                ->whereHas('projects.edits', function (Builder $query) use ($activeStatuses) {
-                    $query->whereIn('status', $activeStatuses);
+                ->whereHas('projects.edits', function (Builder $query) {
+                    $query->whereIn('status', EditStatus::active());
                 })
                 ->exists();
 
@@ -126,10 +96,20 @@ class ClientService
                 ]);
             }
 
+            // Collect file paths before the cascade removes the attachment rows
+            $filePaths = Attachment::query()
+                ->whereHas('edit.project.company', function (Builder $query) use ($lockedClient) {
+                    $query->where('client_id', $lockedClient->id);
+                })
+                ->pluck('file_path')
+                ->all();
+
             $lockedClient->delete();
+
+            return $filePaths;
         });
 
-        // Clean up physical files after database transaction commits
+        // Remove physical files only after the transaction has committed
         $this->attachmentStorageService->deleteFiles($filePaths);
     }
 }

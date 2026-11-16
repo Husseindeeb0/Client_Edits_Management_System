@@ -3,13 +3,23 @@
 namespace App\Features\Clients\Models;
 
 use App\Features\Companies\Models\Company;
+use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
+    /** @use HasFactory<ClientFactory> */
     use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): ClientFactory
+    {
+        return ClientFactory::new();
+    }
 
     /**
      * The table associated with the model.
