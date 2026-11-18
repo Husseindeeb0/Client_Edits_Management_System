@@ -17,6 +17,8 @@ class EditFiltersDTOTest extends TestCase
             priority: EditPriority::High,
             isPaid: false,
             projectId: 99,
+            clientId: 3,
+            activeOnly: true,
         );
 
         $scoped = $filters->forProject(7);
@@ -26,6 +28,8 @@ class EditFiltersDTOTest extends TestCase
         $this->assertSame(EditStatus::Done, $scoped->status);
         $this->assertSame(EditPriority::High, $scoped->priority);
         $this->assertFalse($scoped->isPaid);
+        $this->assertSame(3, $scoped->clientId);
+        $this->assertTrue($scoped->activeOnly);
         $this->assertSame(99, $filters->projectId, 'The original filters must not change.');
     }
 }

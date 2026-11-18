@@ -6,8 +6,10 @@ use App\Features\Attachments\Services\AttachmentStorageService;
 use App\Features\Edits\DTOs\CreateEditDTO;
 use App\Features\Edits\DTOs\EditFiltersDTO;
 use App\Features\Edits\DTOs\UpdateEditDTO;
+use App\Features\Edits\Enums\EditStatus;
 use App\Features\Edits\Models\Edit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 class EditService
 {
@@ -43,6 +45,16 @@ class EditService
             $query->where('project_id', $filters->projectId);
         }
 
+        if ($filters->clientId !== null) {
+            $query->whereHas('project.company', function (Builder $q) use ($filters) {
+                $q->where('client_id', $filters->clientId);
+            });
+        }
+
+        if ($filters->activeOnly) {
+            $query->whereIn('status', EditStatus::active());
+        }
+
         return $query->latest('id')->paginate($perPage);
     }
 
@@ -64,11 +76,17 @@ class EditService
     }
 
     /**
-     * Retrieve edit details including project and attachments.
+     * Retrieve edit details with the client -> company -> project breadcrumb
+     * and the attachments.
      */
     public function getEditDetails(Edit $edit): Edit
     {
-        return $edit->load(['project:id,name', 'attachments']);
+        return $edit->load([
+            'project:id,name,company_id',
+            'project.company:id,name,client_id',
+            'project.company.client:id,name',
+            'attachments',
+        ]);
     }
 
     /**

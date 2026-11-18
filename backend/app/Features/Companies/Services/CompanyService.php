@@ -21,11 +21,16 @@ class CompanyService
     }
 
     /**
-     * Retrieve a paginated list of companies with optional search.
+     * Retrieve a paginated list of companies, optionally limited to one
+     * client and searched by company or client name.
      */
-    public function getPaginatedCompanies(?string $search, int $perPage): LengthAwarePaginator
+    public function getPaginatedCompanies(?string $search, ?int $clientId, int $perPage): LengthAwarePaginator
     {
         $query = Company::query()->with('client:id,name');
+
+        if ($clientId !== null) {
+            $query->where('client_id', $clientId);
+        }
 
         if ($search !== null) {
             $term = '%'.$search.'%';

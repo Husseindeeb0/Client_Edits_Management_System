@@ -24,6 +24,7 @@ class ListCompaniesRequest extends FormRequest
     {
         return array_merge(PaginationHelper::rules(), [
             'search' => ['nullable', 'string', 'max:255'],
+            'client_id' => ['nullable', 'integer', 'min:1'],
         ]);
     }
 }

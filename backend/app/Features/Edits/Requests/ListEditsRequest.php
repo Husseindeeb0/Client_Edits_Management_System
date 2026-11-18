@@ -32,6 +32,9 @@ class ListEditsRequest extends FormRequest
             'priority' => ['nullable', 'string', Rule::enum(EditPriority::class)],
             'is_paid' => ['nullable', 'string', Rule::in(['true', 'false', '1', '0'])],
             'project_id' => ['nullable', 'integer', 'min:1'],
+            'client_id' => ['nullable', 'integer', 'min:1'],
+            // Only edits that are still in progress (see EditStatus::active())
+            'active' => ['nullable', 'string', Rule::in(['true', 'false', '1', '0'])],
         ]);
     }
 
@@ -46,6 +49,8 @@ class ListEditsRequest extends FormRequest
             priority: $this->filled('priority') ? EditPriority::from($this->validated('priority')) : null,
             isPaid: $this->filled('is_paid') ? $this->boolean('is_paid') : null,
             projectId: $this->filled('project_id') ? (int) $this->validated('project_id') : null,
+            clientId: $this->filled('client_id') ? (int) $this->validated('client_id') : null,
+            activeOnly: $this->boolean('active'),
         );
     }
 }

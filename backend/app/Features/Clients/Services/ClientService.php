@@ -4,10 +4,12 @@ namespace App\Features\Clients\Services;
 
 use App\Features\Attachments\Models\Attachment;
 use App\Features\Attachments\Services\AttachmentStorageService;
+use App\Features\Clients\DTOs\ClientSummaryDTO;
 use App\Features\Clients\DTOs\CreateClientDTO;
 use App\Features\Clients\DTOs\UpdateClientDTO;
 use App\Features\Clients\Models\Client;
 use App\Features\Edits\Enums\EditStatus;
+use App\Features\Edits\Models\Edit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -53,11 +55,27 @@ class ClientService
     }
 
     /**
-     * Retrieve client details including associated companies.
+     * Compute the numbers shown on the client details summary cards. Every
+     * value is a single aggregate query; no rows are loaded.
+     *
+     * The unpaid total counts edits that are not paid and not cancelled,
+     * since a cancelled edit is not owed.
      */
-    public function getClientDetails(Client $client): Client
+    public function getClientSummary(Client $client): ClientSummaryDTO
     {
-        return $client->load('companies');
+        $clientEdits = Edit::query()->whereHas('project.company', function (Builder $query) use ($client) {
+            $query->where('client_id', $client->id);
+        });
+
+        return new ClientSummaryDTO(
+            companiesCount: $client->companies()->count(),
+            projectsCount: $client->projects()->count(),
+            activeEditsCount: (clone $clientEdits)->whereIn('status', EditStatus::active())->count(),
+            unpaidTotal: round((float) (clone $clientEdits)
+                ->where('is_paid', false)
+                ->where('status', '!=', EditStatus::Cancelled)
+                ->sum('price'), 2),
+        );
     }
 
     /**

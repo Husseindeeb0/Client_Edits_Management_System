@@ -101,6 +101,43 @@ class CompaniesTest extends TestCase
         $resByClient->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_can_filter_companies_by_client(): void
+    {
+        $otherClient = Client::create(['name' => 'Other Owner', 'phone_number' => '999']);
+
+        $mine = Company::create(['name' => 'Mine', 'client_id' => $this->client->id]);
+        Company::create(['name' => 'Theirs', 'client_id' => $otherClient->id]);
+
+        $this->getJson("/api/companies?client_id={$this->client->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $mine->id)
+            ->assertJsonStructure(['data', 'links', 'meta']);
+    }
+
+    public function test_client_filter_combines_with_search(): void
+    {
+        Company::create(['name' => 'Stark Industries', 'client_id' => $this->client->id]);
+        Company::create(['name' => 'Stark Labs', 'client_id' => $this->client->id]);
+        Company::create(['name' => 'Acme', 'client_id' => $this->client->id]);
+        $otherClient = Client::create(['name' => 'Other Owner', 'phone_number' => '999']);
+        Company::create(['name' => 'Stark Elsewhere', 'client_id' => $otherClient->id]);
+
+        $this->getJson("/api/companies?client_id={$this->client->id}&search=Stark")
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_client_filter_returns_empty_list_for_client_without_companies(): void
+    {
+        $emptyClient = Client::create(['name' => 'Empty', 'phone_number' => '111']);
+        Company::create(['name' => 'Someone Else', 'client_id' => $this->client->id]);
+
+        $this->getJson("/api/companies?client_id={$emptyClient->id}")
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
     public function test_can_get_company_details_without_projects(): void
     {
         $company = Company::create(['name' => 'Cyberdyne', 'client_id' => $this->client->id]);

@@ -11,6 +11,7 @@ use App\Features\Edits\Models\Edit;
 use App\Features\Projects\Models\Project;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -155,6 +156,60 @@ class AttachmentsTest extends TestCase
             ->assertJsonPath('data.1.id', $older->id);
     }
 
+    public function test_can_list_all_attachments_paginated_with_edit_title_newest_first(): void
+    {
+        $older = Attachment::factory()->for($this->edit)->create();
+        $newer = Attachment::factory()->create(); // another edit
+
+        $this->getJson('/api/attachments')
+            ->assertOk()
+            ->assertJsonStructure([
+                'data' => ['*' => ['id', 'edit_id', 'edit_title', 'original_file_name', 'description', 'created_at']],
+                'links',
+                'meta',
+            ])
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', $newer->id)
+            ->assertJsonPath('data.0.edit_title', $newer->edit->title)
+            ->assertJsonPath('data.1.id', $older->id)
+            ->assertJsonPath('data.1.edit_title', $this->edit->title);
+    }
+
+    public function test_can_search_all_attachments_by_file_name(): void
+    {
+        $match = Attachment::factory()->for($this->edit)->create(['original_file_name' => 'signed-contract.pdf']);
+        Attachment::factory()->for($this->edit)->create(['original_file_name' => 'logo.png']);
+
+        $this->getJson('/api/attachments?search=contract')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $match->id);
+    }
+
+    public function test_listing_all_attachments_runs_a_constant_number_of_queries(): void
+    {
+        Attachment::factory()->create();
+        $queriesForOne = $this->countQueries('/api/attachments');
+
+        Attachment::factory()->count(9)->create(); // each on its own edit
+        $queriesForTen = $this->countQueries('/api/attachments');
+
+        $this->assertSame($queriesForOne, $queriesForTen, 'Listing attachments must not run one query per attachment (N+1).');
+    }
+
+    private function countQueries(string $url): int
+    {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->getJson($url)->assertOk();
+
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $count;
+    }
+
     // -------------------------------------------------------------------------
     // Download
     // -------------------------------------------------------------------------
@@ -267,6 +322,7 @@ class AttachmentsTest extends TestCase
         $attachment = Attachment::factory()->for($this->edit)->create();
         $this->app['auth']->forgetGuards();
 
+        $this->getJson('/api/attachments')->assertUnauthorized();
         $this->getJson("/api/edits/{$this->edit->id}/attachments")->assertUnauthorized();
         $this->postJson("/api/edits/{$this->edit->id}/attachments")->assertUnauthorized();
         $this->getJson("/api/attachments/{$attachment->id}/download")->assertUnauthorized();

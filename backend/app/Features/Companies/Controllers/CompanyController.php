@@ -31,7 +31,9 @@ class CompanyController extends Controller
     {
         $perPage = PaginationHelper::resolvePerPage($request->validated('per_page'));
 
-        $companies = $this->companyService->getPaginatedCompanies($request->validated('search'), $perPage);
+        $clientId = $request->filled('client_id') ? (int) $request->validated('client_id') : null;
+
+        $companies = $this->companyService->getPaginatedCompanies($request->validated('search'), $clientId, $perPage);
 
         return CompanyListResource::collection($companies);
     }

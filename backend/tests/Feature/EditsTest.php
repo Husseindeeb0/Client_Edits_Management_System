@@ -178,6 +178,50 @@ class EditsTest extends TestCase
             ->assertJsonFragment(['status' => 'Pending']);
     }
 
+    public function test_can_filter_edits_by_client(): void
+    {
+        $mine = Edit::factory()->for($this->project)->create();
+        Edit::factory()->create(); // belongs to another client
+
+        $this->getJson("/api/edits?client_id={$this->project->company->client_id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $mine->id);
+    }
+
+    public function test_active_filter_returns_only_pending_confirmed_and_in_progress(): void
+    {
+        foreach (['Pending', 'Confirmed', 'In Progress', 'Done', 'Cancelled'] as $status) {
+            Edit::create(['project_id' => $this->project->id, 'title' => $status, 'priority' => 'Low', 'status' => $status]);
+        }
+
+        $statuses = collect($this->getJson('/api/edits?active=1')->assertOk()->json('data'))->pluck('status')->sort()->values()->all();
+
+        $this->assertSame(['Confirmed', 'In Progress', 'Pending'], $statuses);
+    }
+
+    public function test_active_filter_set_to_false_returns_every_status(): void
+    {
+        Edit::factory()->for($this->project)->active()->create();
+        Edit::factory()->for($this->project)->done()->create();
+
+        $this->getJson('/api/edits?active=0')->assertOk()->assertJsonCount(2, 'data');
+    }
+
+    public function test_client_and_active_filters_combine_for_the_active_edits_tab(): void
+    {
+        $clientId = $this->project->company->client_id;
+        $active = Edit::factory()->for($this->project)->active()->create();
+        Edit::factory()->for($this->project)->done()->create();
+        Edit::factory()->active()->create(); // active, but another client
+
+        $this->getJson("/api/edits?client_id={$clientId}&active=1")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $active->id)
+            ->assertJsonStructure(['data', 'links', 'meta']);
+    }
+
     public function test_can_filter_edits_by_priority(): void
     {
         Edit::create(['project_id' => $this->project->id, 'title' => 'High Priority', 'priority' => 'High', 'status' => 'Pending']);
@@ -257,6 +301,18 @@ class EditsTest extends TestCase
                     'attachments' => [],
                 ],
             ]);
+    }
+
+    public function test_edit_details_include_client_company_project_breadcrumb(): void
+    {
+        $edit = Edit::factory()->for($this->project)->create();
+        $company = $this->project->company;
+
+        $this->getJson("/api/edits/{$edit->id}")
+            ->assertOk()
+            ->assertJsonPath('data.project', ['id' => $this->project->id, 'name' => 'Test Project'])
+            ->assertJsonPath('data.company', ['id' => $company->id, 'name' => 'Test Company'])
+            ->assertJsonPath('data.client', ['id' => $company->client_id, 'name' => 'Test Client']);
     }
 
     public function test_get_edit_details_returns_404_for_missing_edit(): void

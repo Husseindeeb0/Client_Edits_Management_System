@@ -108,27 +108,24 @@ class ClientsTest extends TestCase
         $responseByEmail->assertOk()->assertJsonCount(1, 'data');
     }
 
-    public function test_can_get_client_details_with_companies_without_projects(): void
+    public function test_client_details_do_not_embed_related_lists(): void
     {
         $client = Client::create(['name' => 'Acme Corp Client', 'phone_number' => '555']);
-        $company1 = Company::create(['client_id' => $client->id, 'name' => 'Company A']);
-        $company2 = Company::create(['client_id' => $client->id, 'name' => 'Company B']);
+        Company::create(['client_id' => $client->id, 'name' => 'Company A']);
 
         $response = $this->getJson("/api/clients/{$client->id}");
 
+        // Companies, projects and edits are loaded by the details page tabs
         $response->assertOk()
-            ->assertJson([
+            ->assertExactJson([
                 'data' => [
                     'id' => $client->id,
                     'name' => 'Acme Corp Client',
-                    'companies' => [
-                        ['id' => $company1->id, 'name' => 'Company A'],
-                        ['id' => $company2->id, 'name' => 'Company B'],
-                    ],
+                    'phone_number' => '555',
+                    'email' => null,
+                    'last_follow_up_date' => null,
                 ],
             ]);
-
-        $this->assertArrayNotHasKey('projects', $response->json('data'));
     }
 
     public function test_partial_update_preserves_omitted_fields(): void

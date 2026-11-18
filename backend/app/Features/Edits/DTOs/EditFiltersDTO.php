@@ -13,6 +13,8 @@ readonly class EditFiltersDTO
         public ?EditPriority $priority = null,
         public ?bool $isPaid = null,
         public ?int $projectId = null,
+        public ?int $clientId = null,
+        public bool $activeOnly = false,
     ) {
     }
 
@@ -27,6 +29,8 @@ readonly class EditFiltersDTO
             priority: $this->priority,
             isPaid: $this->isPaid,
             projectId: $projectId,
+            clientId: $this->clientId,
+            activeOnly: $this->activeOnly,
         );
     }
 }

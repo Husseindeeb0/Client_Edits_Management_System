@@ -12,9 +12,9 @@ class StoreAttachmentRequest extends FormRequest
     public const MAX_FILES = 10;
 
     /**
-     * Maximum size of a single file, in kilobytes (20 MB).
+     * Maximum size of a single file, in kilobytes (10 MB).
      */
-    public const MAX_FILE_SIZE_KB = 20480;
+    public const MAX_FILE_SIZE_KB = 10240;
 
     /**
      * Determine if the user is authorized to make this request.

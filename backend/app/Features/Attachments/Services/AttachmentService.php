@@ -5,6 +5,7 @@ namespace App\Features\Attachments\Services;
 use App\Features\Attachments\DTOs\UploadAttachmentsDTO;
 use App\Features\Attachments\Models\Attachment;
 use App\Features\Edits\Models\Edit;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +16,21 @@ class AttachmentService
     public function __construct(
         protected AttachmentStorageService $attachmentStorageService,
     ) {
+    }
+
+    /**
+     * Retrieve a paginated list of all attachments, optionally searched by
+     * file name, with each attachment's edit title.
+     */
+    public function getPaginatedAttachments(?string $search, int $perPage): LengthAwarePaginator
+    {
+        $query = Attachment::query()->with('edit:id,title');
+
+        if ($search !== null) {
+            $query->where('original_file_name', 'like', '%'.$search.'%');
+        }
+
+        return $query->latest('id')->paginate($perPage);
     }
 
     /**
@@ -86,4 +102,3 @@ class AttachmentService
         $this->attachmentStorageService->deleteAttachmentRecordAndFile($attachment);
     }
 }
-

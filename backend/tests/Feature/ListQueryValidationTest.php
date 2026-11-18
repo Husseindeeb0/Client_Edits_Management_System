@@ -29,7 +29,7 @@ class ListQueryValidationTest extends TestCase
     {
         $project = Project::factory()->create();
 
-        foreach (['/api/clients', '/api/companies', '/api/edits', "/api/projects/{$project->id}/edits"] as $url) {
+        foreach (['/api/clients', '/api/companies', '/api/edits', "/api/projects/{$project->id}/edits", '/api/attachments'] as $url) {
             $this->getJson("$url?search[]=x")
                 ->assertUnprocessable()
                 ->assertJsonValidationErrors(['search']);
@@ -48,7 +48,7 @@ class ListQueryValidationTest extends TestCase
         $client = Client::factory()->create();
         $company = Company::factory()->create();
 
-        $urls = ['/api/clients', '/api/companies', '/api/edits', "/api/projects/client/{$client->id}", "/api/projects/company/{$company->id}"];
+        $urls = ['/api/clients', '/api/companies', '/api/edits', "/api/projects/client/{$client->id}", "/api/projects/company/{$company->id}", '/api/attachments'];
 
         foreach ($urls as $url) {
             $this->getJson("$url?per_page=abc")->assertUnprocessable()->assertJsonValidationErrors(['per_page']);
@@ -81,11 +81,20 @@ class ListQueryValidationTest extends TestCase
         }
 
         $this->getJson('/api/edits?project_id=abc')->assertUnprocessable()->assertJsonValidationErrors(['project_id']);
+        $this->getJson('/api/edits?client_id=abc')->assertUnprocessable()->assertJsonValidationErrors(['client_id']);
+        $this->getJson('/api/edits?client_id=0')->assertUnprocessable()->assertJsonValidationErrors(['client_id']);
+        $this->getJson('/api/edits?active=maybe')->assertUnprocessable()->assertJsonValidationErrors(['active']);
+    }
+
+    public function test_company_client_filter_must_be_a_positive_integer(): void
+    {
+        $this->getJson('/api/companies?client_id=abc')->assertUnprocessable()->assertJsonValidationErrors(['client_id']);
+        $this->getJson('/api/companies?client_id=0')->assertUnprocessable()->assertJsonValidationErrors(['client_id']);
     }
 
     public function test_edit_filters_accept_valid_values(): void
     {
-        $this->getJson('/api/edits?status=In%20Progress&priority=High&is_paid=0&project_id=1&search=logo')
+        $this->getJson('/api/edits?status=In%20Progress&priority=High&is_paid=0&project_id=1&client_id=1&active=true&search=logo')
             ->assertOk();
     }
 }

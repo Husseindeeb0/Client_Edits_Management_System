@@ -3,10 +3,12 @@
 namespace App\Features\Clients\Models;
 
 use App\Features\Companies\Models\Company;
+use App\Features\Projects\Models\Project;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Client extends Model
 {
@@ -58,6 +60,14 @@ class Client extends Model
     public function companies(): HasMany
     {
         return $this->hasMany(Company::class);
+    }
+
+    /**
+     * Get the projects of all the client's companies.
+     */
+    public function projects(): HasManyThrough
+    {
+        return $this->hasManyThrough(Project::class, Company::class);
     }
 }
 

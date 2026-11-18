@@ -11,6 +11,7 @@ use App\Features\Clients\Requests\UpdateClientRequest;
 use App\Features\Clients\Resources\ClientDetailsResource;
 use App\Features\Clients\Resources\ClientListResource;
 use App\Features\Clients\Resources\ClientResource;
+use App\Features\Clients\Resources\ClientSummaryResource;
 use App\Features\Clients\Services\ClientService;
 use App\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
@@ -56,13 +57,21 @@ class ClientController extends Controller
     }
 
     /**
-     * Display the specified client with associated companies.
+     * Display the specified client.
      */
     public function getClientDetails(Client $client): ClientDetailsResource
     {
-        $clientWithDetails = $this->clientService->getClientDetails($client);
+        return new ClientDetailsResource($client);
+    }
 
-        return new ClientDetailsResource($clientWithDetails);
+    /**
+     * Return the summary numbers for the client details page cards.
+     */
+    public function getClientSummary(Client $client): ClientSummaryResource
+    {
+        $summary = $this->clientService->getClientSummary($client);
+
+        return new ClientSummaryResource($summary);
     }
 
     /**

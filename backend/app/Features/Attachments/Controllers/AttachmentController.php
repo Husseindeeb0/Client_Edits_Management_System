@@ -4,10 +4,13 @@ namespace App\Features\Attachments\Controllers;
 
 use App\Features\Attachments\DTOs\UploadAttachmentsDTO;
 use App\Features\Attachments\Models\Attachment;
+use App\Features\Attachments\Requests\ListAttachmentsRequest;
 use App\Features\Attachments\Requests\StoreAttachmentRequest;
+use App\Features\Attachments\Resources\AttachmentListResource;
 use App\Features\Attachments\Resources\AttachmentResource;
 use App\Features\Attachments\Services\AttachmentService;
 use App\Features\Edits\Models\Edit;
+use App\Helpers\PaginationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controller;
@@ -18,6 +21,18 @@ class AttachmentController extends Controller
     public function __construct(
         protected AttachmentService $attachmentService,
     ) {
+    }
+
+    /**
+     * Retrieve a paginated list of all attachments.
+     */
+    public function getPaginatedAttachments(ListAttachmentsRequest $request): AnonymousResourceCollection
+    {
+        $perPage = PaginationHelper::resolvePerPage($request->validated('per_page'));
+
+        $attachments = $this->attachmentService->getPaginatedAttachments($request->validated('search'), $perPage);
+
+        return AttachmentListResource::collection($attachments);
     }
 
     /**

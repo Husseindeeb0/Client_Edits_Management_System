@@ -22,6 +22,8 @@ class ListProjectsRequest extends FormRequest
      */
     public function rules(): array
     {
-        return PaginationHelper::rules();
+        return array_merge(PaginationHelper::rules(), [
+            'search' => ['nullable', 'string', 'max:255'],
+        ]);
     }
 }
