@@ -26,7 +26,7 @@ class CompanyService
      */
     public function getPaginatedCompanies(?string $search, ?int $clientId, int $perPage): LengthAwarePaginator
     {
-        $query = Company::query()->with('client:id,name');
+        $query = Company::query()->with('client:client_id,name');
 
         if ($clientId !== null) {
             $query->where('client_id', $clientId);
@@ -42,7 +42,7 @@ class CompanyService
             });
         }
 
-        return $query->latest('id')->paginate($perPage);
+        return $query->latest('company_id')->paginate($perPage);
     }
 
     /**
@@ -86,7 +86,7 @@ class CompanyService
         $filePaths = DB::transaction(function () use ($company) {
             // Lock the company row so concurrent requests can't add active edits mid-check
             $lockedCompany = Company::query()
-                ->whereKey($company->id)
+                ->whereKey($company->company_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -105,7 +105,7 @@ class CompanyService
             // Collect file paths before the cascade removes the attachment rows
             $filePaths = Attachment::query()
                 ->whereHas('edit.project', function (Builder $query) use ($lockedCompany) {
-                    $query->where('company_id', $lockedCompany->id);
+                    $query->where('company_id', $lockedCompany->company_id);
                 })
                 ->pluck('file_path')
                 ->all();

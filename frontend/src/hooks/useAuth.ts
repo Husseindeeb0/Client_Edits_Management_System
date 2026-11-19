@@ -4,5 +4,5 @@ import { useMeQuery } from '../client/authApi';
 export function useAuth() {
   const { data: user = null, isLoading, error, refetch } = useMeQuery();
 
-  return { user, isLoading, error, retry: refetch };
+  return { user, isAuthenticated: user !== null && !error, isLoading, error, retry: refetch };
 }

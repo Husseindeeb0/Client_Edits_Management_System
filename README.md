@@ -66,6 +66,11 @@ DB_PASSWORD=your_mysql_password
 SANCTUM_STATEFUL_DOMAINS=localhost:5173
 SESSION_DOMAIN=null
 
+# How long the admin stays logged in without a request, in minutes (1440 = one day).
+# Each request restarts the countdown. Set SESSION_EXPIRE_ON_CLOSE=true to log out when the browser closes.
+SESSION_LIFETIME=1440
+SESSION_EXPIRE_ON_CLOSE=false
+
 # The administrator account created by the seeder
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=choose_a_password
@@ -126,7 +131,8 @@ The frontend and backend use Sanctum's cookie-based SPA authentication:
 
 ## API overview
 
-All routes are under `/api` and need a logged-in session, except login.
+All routes are under `/api` and need a logged-in session, except login and `GET /auth/me`,
+which answers `{ "data": null }` (200) when nobody is logged in.
 
 | Feature | Endpoints |
 |---|---|

@@ -24,7 +24,7 @@ class UpdateProjectRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'company_id' => ['sometimes', 'required', 'integer', 'exists:companies,id'],
+            'company_id' => ['sometimes', 'required', 'integer', 'exists:companies,company_id'],
         ];
     }
 

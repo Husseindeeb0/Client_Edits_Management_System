@@ -111,15 +111,15 @@ class ClientsTest extends TestCase
     public function test_client_details_do_not_embed_related_lists(): void
     {
         $client = Client::create(['name' => 'Acme Corp Client', 'phone_number' => '555']);
-        Company::create(['client_id' => $client->id, 'name' => 'Company A']);
+        Company::create(['client_id' => $client->client_id, 'name' => 'Company A']);
 
-        $response = $this->getJson("/api/clients/{$client->id}");
+        $response = $this->getJson("/api/clients/{$client->client_id}");
 
         // Companies, projects and edits are loaded by the details page tabs
         $response->assertOk()
             ->assertExactJson([
                 'data' => [
-                    'id' => $client->id,
+                    'id' => $client->client_id,
                     'name' => 'Acme Corp Client',
                     'phone_number' => '555',
                     'email' => null,
@@ -137,7 +137,7 @@ class ClientsTest extends TestCase
             'last_follow_up_date' => '2026-01-01',
         ]);
 
-        $response = $this->patchJson("/api/clients/{$client->id}", [
+        $response = $this->patchJson("/api/clients/{$client->client_id}", [
             'name' => 'Updated Name',
         ]);
 
@@ -165,7 +165,7 @@ class ClientsTest extends TestCase
             'last_follow_up_date' => '2026-01-01',
         ]);
 
-        $response = $this->patchJson("/api/clients/{$client->id}", [
+        $response = $this->patchJson("/api/clients/{$client->client_id}", [
             'email' => null,
             'last_follow_up_date' => null,
         ]);
@@ -192,7 +192,7 @@ class ClientsTest extends TestCase
             'phone_number' => '123456',
         ]);
 
-        $response = $this->patchJson("/api/clients/{$client->id}", []);
+        $response = $this->patchJson("/api/clients/{$client->client_id}", []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['payload']);
@@ -201,43 +201,43 @@ class ClientsTest extends TestCase
     public function test_cannot_delete_client_when_active_edits_exist(): void
     {
         $client = Client::create(['name' => 'Client With Edits', 'phone_number' => '111']);
-        $company = Company::create(['client_id' => $client->id, 'name' => 'Company X']);
-        $project = Project::create(['company_id' => $company->id, 'name' => 'Project 1']);
+        $company = Company::create(['client_id' => $client->client_id, 'name' => 'Company X']);
+        $project = Project::create(['company_id' => $company->company_id, 'name' => 'Project 1']);
 
         Edit::create([
-            'project_id' => $project->id,
+            'project_id' => $project->project_id,
             'title' => 'Active Edit',
             'priority' => 'High',
             'status' => 'In Progress',
         ]);
 
-        $response = $this->deleteJson("/api/clients/{$client->id}");
+        $response = $this->deleteJson("/api/clients/{$client->client_id}");
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['client']);
 
-        $this->assertDatabaseHas('clients', ['id' => $client->id]);
+        $this->assertDatabaseHas('clients', ['client_id' => $client->client_id]);
     }
 
     public function test_can_delete_client_when_edits_are_inactive(): void
     {
         $client = Client::create(['name' => 'Client With Inactive Edits', 'phone_number' => '111']);
-        $company = Company::create(['client_id' => $client->id, 'name' => 'Company Y']);
-        $project = Project::create(['company_id' => $company->id, 'name' => 'Project 2']);
+        $company = Company::create(['client_id' => $client->client_id, 'name' => 'Company Y']);
+        $project = Project::create(['company_id' => $company->company_id, 'name' => 'Project 2']);
 
         Edit::create([
-            'project_id' => $project->id,
+            'project_id' => $project->project_id,
             'title' => 'Done Edit',
             'priority' => 'Low',
             'status' => 'Done',
         ]);
 
-        $response = $this->deleteJson("/api/clients/{$client->id}");
+        $response = $this->deleteJson("/api/clients/{$client->client_id}");
 
         $response->assertOk()
             ->assertJson(['message' => 'Client deleted successfully.']);
 
-        $this->assertDatabaseMissing('clients', ['id' => $client->id]);
+        $this->assertDatabaseMissing('clients', ['client_id' => $client->client_id]);
     }
 
     public function test_unauthenticated_requests_are_rejected(): void

@@ -27,8 +27,8 @@ class EditsTest extends TestCase
         Sanctum::actingAs($this->user);
 
         $client  = Client::create(['name' => 'Test Client', 'phone_number' => '+1234567890']);
-        $company = Company::create(['name' => 'Test Company', 'client_id' => $client->id]);
-        $this->project = Project::create(['name' => 'Test Project', 'company_id' => $company->id]);
+        $company = Company::create(['name' => 'Test Company', 'client_id' => $client->client_id]);
+        $this->project = Project::create(['name' => 'Test Project', 'company_id' => $company->company_id]);
     }
 
     // -------------------------------------------------------------------------
@@ -38,7 +38,7 @@ class EditsTest extends TestCase
     public function test_can_create_edit_with_required_fields_only(): void
     {
         $response = $this->postJson('/api/edits', [
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Fix homepage banner',
             'priority'   => 'Medium',
             'status'     => 'Pending',
@@ -47,7 +47,7 @@ class EditsTest extends TestCase
         $response->assertCreated()
             ->assertJson([
                 'data' => [
-                    'project_id' => $this->project->id,
+                    'project_id' => $this->project->project_id,
                     'title'      => 'Fix homepage banner',
                     'priority'   => 'Medium',
                     'status'     => 'Pending',
@@ -57,14 +57,14 @@ class EditsTest extends TestCase
 
         $this->assertDatabaseHas('edits', [
             'title'      => 'Fix homepage banner',
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
         ]);
     }
 
     public function test_can_create_edit_with_all_fields(): void
     {
         $response = $this->postJson('/api/edits', [
-            'project_id'  => $this->project->id,
+            'project_id'  => $this->project->project_id,
             'title'       => 'Full edit',
             'description' => 'Detailed description here',
             'priority'    => 'High',
@@ -103,7 +103,7 @@ class EditsTest extends TestCase
     public function test_create_edit_fails_with_invalid_priority(): void
     {
         $response = $this->postJson('/api/edits', [
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Edit with bad priority',
             'priority'   => 'Urgent',  // not in allowed list
             'status'     => 'Pending',
@@ -116,7 +116,7 @@ class EditsTest extends TestCase
     public function test_create_edit_fails_with_invalid_status(): void
     {
         $response = $this->postJson('/api/edits', [
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Edit with bad status',
             'priority'   => 'Low',
             'status'     => 'Completed',  // not in allowed list
@@ -140,8 +140,8 @@ class EditsTest extends TestCase
 
     public function test_can_retrieve_paginated_edits(): void
     {
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Edit A', 'priority' => 'High', 'status' => 'Pending']);
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Edit B', 'priority' => 'Low', 'status' => 'Done']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Edit A', 'priority' => 'High', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Edit B', 'priority' => 'Low', 'status' => 'Done']);
 
         $response = $this->getJson('/api/edits');
 
@@ -158,7 +158,7 @@ class EditsTest extends TestCase
 
     public function test_edit_list_includes_project_name(): void
     {
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Named Edit', 'priority' => 'Medium', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Named Edit', 'priority' => 'Medium', 'status' => 'Pending']);
 
         $response = $this->getJson('/api/edits');
 
@@ -168,8 +168,8 @@ class EditsTest extends TestCase
 
     public function test_can_filter_edits_by_status(): void
     {
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Pending Edit', 'priority' => 'Low', 'status' => 'Pending']);
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Done Edit',    'priority' => 'Low', 'status' => 'Done']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Pending Edit', 'priority' => 'Low', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Done Edit',    'priority' => 'Low', 'status' => 'Done']);
 
         $response = $this->getJson('/api/edits?status=Pending');
 
@@ -186,13 +186,13 @@ class EditsTest extends TestCase
         $this->getJson("/api/edits?client_id={$this->project->company->client_id}")
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $mine->id);
+            ->assertJsonPath('data.0.id', $mine->edit_id);
     }
 
     public function test_active_filter_returns_only_pending_confirmed_and_in_progress(): void
     {
         foreach (['Pending', 'Confirmed', 'In Progress', 'Done', 'Cancelled'] as $status) {
-            Edit::create(['project_id' => $this->project->id, 'title' => $status, 'priority' => 'Low', 'status' => $status]);
+            Edit::create(['project_id' => $this->project->project_id, 'title' => $status, 'priority' => 'Low', 'status' => $status]);
         }
 
         $statuses = collect($this->getJson('/api/edits?active=1')->assertOk()->json('data'))->pluck('status')->sort()->values()->all();
@@ -218,14 +218,14 @@ class EditsTest extends TestCase
         $this->getJson("/api/edits?client_id={$clientId}&active=1")
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $active->id)
+            ->assertJsonPath('data.0.id', $active->edit_id)
             ->assertJsonStructure(['data', 'links', 'meta']);
     }
 
     public function test_can_filter_edits_by_priority(): void
     {
-        Edit::create(['project_id' => $this->project->id, 'title' => 'High Priority', 'priority' => 'High', 'status' => 'Pending']);
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Low Priority',  'priority' => 'Low',  'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'High Priority', 'priority' => 'High', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Low Priority',  'priority' => 'Low',  'status' => 'Pending']);
 
         $response = $this->getJson('/api/edits?priority=High');
 
@@ -236,8 +236,8 @@ class EditsTest extends TestCase
 
     public function test_can_filter_edits_by_is_paid(): void
     {
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Paid Edit',   'priority' => 'Low', 'status' => 'Done', 'is_paid' => true]);
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Unpaid Edit', 'priority' => 'Low', 'status' => 'Done', 'is_paid' => false]);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Paid Edit',   'priority' => 'Low', 'status' => 'Done', 'is_paid' => true]);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Unpaid Edit', 'priority' => 'Low', 'status' => 'Done', 'is_paid' => false]);
 
         $response = $this->getJson('/api/edits?is_paid=true');
 
@@ -249,23 +249,23 @@ class EditsTest extends TestCase
     public function test_can_filter_edits_by_project_id(): void
     {
         $client2  = Client::create(['name' => 'Other Client', 'phone_number' => '999']);
-        $company2 = Company::create(['name' => 'Other Company', 'client_id' => $client2->id]);
-        $project2 = Project::create(['name' => 'Other Project', 'company_id' => $company2->id]);
+        $company2 = Company::create(['name' => 'Other Company', 'client_id' => $client2->client_id]);
+        $project2 = Project::create(['name' => 'Other Project', 'company_id' => $company2->company_id]);
 
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Edit for P1', 'priority' => 'Low', 'status' => 'Pending']);
-        Edit::create(['project_id' => $project2->id,     'title' => 'Edit for P2', 'priority' => 'Low', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Edit for P1', 'priority' => 'Low', 'status' => 'Pending']);
+        Edit::create(['project_id' => $project2->project_id,     'title' => 'Edit for P2', 'priority' => 'Low', 'status' => 'Pending']);
 
-        $response = $this->getJson("/api/edits?project_id={$this->project->id}");
+        $response = $this->getJson("/api/edits?project_id={$this->project->project_id}");
 
         $response->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonFragment(['project_id' => $this->project->id]);
+            ->assertJsonFragment(['project_id' => $this->project->project_id]);
     }
 
     public function test_can_search_edits_by_title(): void
     {
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Banner redesign', 'priority' => 'Low', 'status' => 'Pending']);
-        Edit::create(['project_id' => $this->project->id, 'title' => 'Footer fix',      'priority' => 'Low', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Banner redesign', 'priority' => 'Low', 'status' => 'Pending']);
+        Edit::create(['project_id' => $this->project->project_id, 'title' => 'Footer fix',      'priority' => 'Low', 'status' => 'Pending']);
 
         $response = $this->getJson('/api/edits?search=Banner');
 
@@ -281,14 +281,14 @@ class EditsTest extends TestCase
     public function test_can_get_edit_details_with_project_and_attachments(): void
     {
         $edit = Edit::create([
-            'project_id'  => $this->project->id,
+            'project_id'  => $this->project->project_id,
             'title'       => 'Detail Edit',
             'description' => 'Some description',
             'priority'    => 'High',
             'status'      => 'Pending',
         ]);
 
-        $response = $this->getJson("/api/edits/{$edit->id}");
+        $response = $this->getJson("/api/edits/{$edit->edit_id}");
 
         $response->assertOk()
             ->assertJsonStructure([
@@ -296,8 +296,8 @@ class EditsTest extends TestCase
             ])
             ->assertJson([
                 'data' => [
-                    'id'          => $edit->id,
-                    'project'     => ['id' => $this->project->id, 'name' => 'Test Project'],
+                    'id'          => $edit->edit_id,
+                    'project'     => ['id' => $this->project->project_id, 'name' => 'Test Project'],
                     'attachments' => [],
                 ],
             ]);
@@ -308,10 +308,10 @@ class EditsTest extends TestCase
         $edit = Edit::factory()->for($this->project)->create();
         $company = $this->project->company;
 
-        $this->getJson("/api/edits/{$edit->id}")
+        $this->getJson("/api/edits/{$edit->edit_id}")
             ->assertOk()
-            ->assertJsonPath('data.project', ['id' => $this->project->id, 'name' => 'Test Project'])
-            ->assertJsonPath('data.company', ['id' => $company->id, 'name' => 'Test Company'])
+            ->assertJsonPath('data.project', ['id' => $this->project->project_id, 'name' => 'Test Project'])
+            ->assertJsonPath('data.company', ['id' => $company->company_id, 'name' => 'Test Company'])
             ->assertJsonPath('data.client', ['id' => $company->client_id, 'name' => 'Test Client']);
     }
 
@@ -327,13 +327,13 @@ class EditsTest extends TestCase
     public function test_can_partially_update_edit(): void
     {
         $edit = Edit::create([
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Original Title',
             'priority'   => 'Low',
             'status'     => 'Pending',
         ]);
 
-        $response = $this->patchJson("/api/edits/{$edit->id}", [
+        $response = $this->patchJson("/api/edits/{$edit->edit_id}", [
             'title'  => 'Updated Title',
             'status' => 'In Progress',
         ]);
@@ -355,13 +355,13 @@ class EditsTest extends TestCase
     public function test_update_edit_rejects_empty_payload(): void
     {
         $edit = Edit::create([
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Some Edit',
             'priority'   => 'Low',
             'status'     => 'Pending',
         ]);
 
-        $this->patchJson("/api/edits/{$edit->id}", [])
+        $this->patchJson("/api/edits/{$edit->edit_id}", [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['payload']);
     }
@@ -369,13 +369,13 @@ class EditsTest extends TestCase
     public function test_update_edit_fails_with_invalid_status(): void
     {
         $edit = Edit::create([
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Edit',
             'priority'   => 'Low',
             'status'     => 'Pending',
         ]);
 
-        $this->patchJson("/api/edits/{$edit->id}", ['status' => 'InvalidStatus'])
+        $this->patchJson("/api/edits/{$edit->edit_id}", ['status' => 'InvalidStatus'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['status']);
     }
@@ -387,23 +387,23 @@ class EditsTest extends TestCase
     public function test_can_delete_edit(): void
     {
         $edit = Edit::create([
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'To Be Deleted',
             'priority'   => 'Low',
             'status'     => 'Done',
         ]);
 
-        $this->deleteJson("/api/edits/{$edit->id}")
+        $this->deleteJson("/api/edits/{$edit->edit_id}")
             ->assertOk()
             ->assertJson(['message' => 'Edit deleted successfully.']);
 
-        $this->assertDatabaseMissing('edits', ['id' => $edit->id]);
+        $this->assertDatabaseMissing('edits', ['edit_id' => $edit->edit_id]);
     }
 
     public function test_delete_edit_cascades_to_attachments(): void
     {
         $edit = Edit::create([
-            'project_id' => $this->project->id,
+            'project_id' => $this->project->project_id,
             'title'      => 'Edit With Attachment',
             'priority'   => 'Low',
             'status'     => 'Done',
@@ -415,12 +415,12 @@ class EditsTest extends TestCase
             'original_file_name' => 'fake-file.pdf',
         ]);
 
-        $this->assertDatabaseHas('attachments', ['edit_id' => $edit->id]);
+        $this->assertDatabaseHas('attachments', ['edit_id' => $edit->edit_id]);
 
-        $this->deleteJson("/api/edits/{$edit->id}")->assertOk();
+        $this->deleteJson("/api/edits/{$edit->edit_id}")->assertOk();
 
-        $this->assertDatabaseMissing('edits', ['id' => $edit->id]);
-        $this->assertDatabaseMissing('attachments', ['edit_id' => $edit->id]);
+        $this->assertDatabaseMissing('edits', ['edit_id' => $edit->edit_id]);
+        $this->assertDatabaseMissing('attachments', ['edit_id' => $edit->edit_id]);
     }
 
     // -------------------------------------------------------------------------

@@ -16,24 +16,24 @@ class EditDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->edit_id,
             'project_id' => $this->project_id,
             // Breadcrumb: client -> company -> project
             'project' => $this->whenLoaded('project', function () {
                 return [
-                    'id' => $this->project->id,
+                    'id' => $this->project->project_id,
                     'name' => $this->project->name,
                 ];
             }),
             'company' => $this->whenLoaded('project', function () {
                 return $this->project->relationLoaded('company') ? [
-                    'id' => $this->project->company->id,
+                    'id' => $this->project->company->company_id,
                     'name' => $this->project->company->name,
                 ] : null;
             }),
             'client' => $this->whenLoaded('project', function () {
                 return $this->project->relationLoaded('company') && $this->project->company->relationLoaded('client') ? [
-                    'id' => $this->project->company->client->id,
+                    'id' => $this->project->company->client->client_id,
                     'name' => $this->project->company->client->name,
                 ] : null;
             }),

@@ -31,6 +31,13 @@ class Client extends Model
     protected $table = 'clients';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'client_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -59,7 +66,7 @@ class Client extends Model
      */
     public function companies(): HasMany
     {
-        return $this->hasMany(Company::class);
+        return $this->hasMany(Company::class, 'client_id');
     }
 
     /**
@@ -67,7 +74,7 @@ class Client extends Model
      */
     public function projects(): HasManyThrough
     {
-        return $this->hasManyThrough(Project::class, Company::class);
+        return $this->hasManyThrough(Project::class, Company::class, 'client_id', 'company_id');
     }
 }
 

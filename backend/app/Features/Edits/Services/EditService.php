@@ -23,7 +23,7 @@ class EditService
      */
     public function getPaginatedEdits(EditFiltersDTO $filters, int $perPage): LengthAwarePaginator
     {
-        $query = Edit::query()->with('project:id,name');
+        $query = Edit::query()->with('project:project_id,name');
 
         if ($filters->search !== null) {
             $query->where('title', 'like', '%'.$filters->search.'%');
@@ -55,7 +55,7 @@ class EditService
             $query->whereIn('status', EditStatus::active());
         }
 
-        return $query->latest('id')->paginate($perPage);
+        return $query->latest('edit_id')->paginate($perPage);
     }
 
     /**
@@ -82,9 +82,9 @@ class EditService
     public function getEditDetails(Edit $edit): Edit
     {
         return $edit->load([
-            'project:id,name,company_id',
-            'project.company:id,name,client_id',
-            'project.company.client:id,name',
+            'project:project_id,name,company_id',
+            'project.company:company_id,name,client_id',
+            'project.company.client:client_id,name',
             'attachments',
         ]);
     }

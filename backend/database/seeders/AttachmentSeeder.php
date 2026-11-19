@@ -52,7 +52,7 @@ class AttachmentSeeder extends Seeder
             $edit = Edit::where('title', $editTitle)->firstOrFail();
 
             foreach ($files as [$fileName, $description]) {
-                $attachment = Attachment::firstOrNew(['edit_id' => $edit->id, 'original_file_name' => $fileName]);
+                $attachment = Attachment::firstOrNew(['edit_id' => $edit->edit_id, 'original_file_name' => $fileName]);
 
                 if ($attachment->exists) {
                     continue;

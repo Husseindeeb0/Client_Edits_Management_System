@@ -36,7 +36,7 @@ class ProjectSeeder extends Seeder
             $company = Company::where('name', $companyName)->firstOrFail();
 
             foreach ($projectNames as $projectName) {
-                Project::firstOrCreate(['company_id' => $company->id, 'name' => $projectName]);
+                Project::firstOrCreate(['company_id' => $company->company_id, 'name' => $projectName]);
             }
         }
     }

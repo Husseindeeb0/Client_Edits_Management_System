@@ -36,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
         // General limit for every API route, per admin when logged in, otherwise per IP
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(60)->by($request->user()?->user_id ?: $request->ip());
         });
     }
 }

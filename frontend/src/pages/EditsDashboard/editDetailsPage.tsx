@@ -47,10 +47,10 @@ export default function EditDetailsPage() {
       <Breadcrumbs
         items={[
           { label: 'Clients', to: '/clients' },
-          { label: edit.client?.name ?? 'Client', to: `/clients/${edit.client?.id}` },
-          { label: edit.company?.name ?? 'Company', to: `/companies/${edit.company?.id}` },
-          { label: edit.project?.name ?? 'Project', to: `/projects/${edit.project_id}` },
-          { label: edit.title },
+          { label: edit.client?.name ?? 'Client', type: 'Client', to: `/clients/${edit.client?.id}` },
+          { label: edit.company?.name ?? 'Company', type: 'Company', to: `/companies/${edit.company?.id}` },
+          { label: edit.project?.name ?? 'Project', type: 'Project', to: `/projects/${edit.project_id}` },
+          { label: edit.title, type: 'Edit' },
         ]}
       />
 

@@ -31,7 +31,7 @@ class ProjectService
      */
     public function getPaginatedProjects(?string $search, int $perPage): LengthAwarePaginator
     {
-        $query = Project::query()->with(['company:id,name,client_id', 'company.client:id,name']);
+        $query = Project::query()->with(['company:company_id,name,client_id', 'company.client:client_id,name']);
 
         if ($search !== null) {
             $term = '%'.$search.'%';
@@ -46,7 +46,7 @@ class ProjectService
             });
         }
 
-        return $query->latest('id')->paginate($perPage);
+        return $query->latest('project_id')->paginate($perPage);
     }
 
     /**
@@ -57,11 +57,11 @@ class ProjectService
     {
         return Project::query()
             ->whereHas('company', function (Builder $query) use ($client) {
-                $query->where('client_id', $client->id);
+                $query->where('client_id', $client->client_id);
             })
             ->when($search !== null, fn (Builder $query) => $query->where('name', 'like', '%'.$search.'%'))
-            ->with('company:id,name')
-            ->latest('id')
+            ->with('company:company_id,name')
+            ->latest('project_id')
             ->paginate($perPage);
     }
 
@@ -73,7 +73,7 @@ class ProjectService
     {
         return $company->projects()
             ->when($search !== null, fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
-            ->latest('id')
+            ->latest('project_id')
             ->paginate($perPage);
     }
 
@@ -93,7 +93,7 @@ class ProjectService
      */
     public function getProjectDetails(Project $project): Project
     {
-        return $project->load(['company:id,name,client_id', 'company.client:id,name']);
+        return $project->load(['company:company_id,name,client_id', 'company.client:client_id,name']);
     }
 
     /**
@@ -116,7 +116,7 @@ class ProjectService
         $filePaths = DB::transaction(function () use ($project) {
             // Lock the project row so concurrent requests can't add active edits mid-check
             $lockedProject = Project::query()
-                ->whereKey($project->id)
+                ->whereKey($project->project_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -133,7 +133,7 @@ class ProjectService
             // Collect file paths before the cascade removes the attachment rows
             $filePaths = Attachment::query()
                 ->whereHas('edit', function (Builder $query) use ($lockedProject) {
-                    $query->where('project_id', $lockedProject->id);
+                    $query->where('project_id', $lockedProject->project_id);
                 })
                 ->pluck('file_path')
                 ->all();
@@ -153,6 +153,6 @@ class ProjectService
      */
     public function getEditsByProject(Project $project, EditFiltersDTO $filters, int $perPage): LengthAwarePaginator
     {
-        return $this->editService->getPaginatedEdits($filters->forProject($project->id), $perPage);
+        return $this->editService->getPaginatedEdits($filters->forProject($project->project_id), $perPage);
     }
 }

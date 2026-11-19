@@ -49,8 +49,15 @@ class AuthController extends Controller
     /**
      * Return the currently authenticated administrator.
      */
-    public function me(Request $request): AuthenticatedUserResource
+    public function me(Request $request): AuthenticatedUserResource|JsonResponse
     {
-        return new AuthenticatedUserResource($request->user());
+        // The route has no auth middleware, so ask the Sanctum guard directly
+        $user = $request->user('sanctum');
+
+        if ($user === null) {
+            return response()->json(['data' => null]);
+        }
+
+        return new AuthenticatedUserResource($user);
     }
 }

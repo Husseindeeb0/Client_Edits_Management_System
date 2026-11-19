@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useGetPaginatedCompaniesQuery } from '../../client/companyApi';
 import { useCreateProjectMutation, useUpdateProjectMutation } from '../../client/projectApi';
 import { getErrorMessage, getFieldErrors, isApiError } from '../../errors/apiError';
 import type { Project } from '../../types/project';
 import { validateProject } from '../../validators/projectValidator';
 import type { ProjectFormValues } from '../../validators/projectValidator';
+import CompanySelect from '../CompaniesComponents/CompanySelect';
 import FormField from '../SharedComponents/FormField';
 
 interface ProjectFormProps {
@@ -21,9 +21,6 @@ export default function ProjectForm({ project, onSaved }: ProjectFormProps) {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // For the dropdown; 100 is the most the API returns per page
-  const { data: companies } = useGetPaginatedCompaniesQuery({ per_page: 100 });
-
   const [createProject, createState] = useCreateProjectMutation();
   const [updateProject, updateState] = useUpdateProjectMutation();
   const { isLoading, error } = project ? updateState : createState;
@@ -31,7 +28,7 @@ export default function ProjectForm({ project, onSaved }: ProjectFormProps) {
   const errors = { ...getFieldErrors(error), ...validationErrors };
   const formError = error && !(isApiError(error) && error.status === 422) ? getErrorMessage(error) : null;
 
-  function handleChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
     setValues({ ...values, [event.target.name]: event.target.value });
   }
 
@@ -62,14 +59,11 @@ export default function ProjectForm({ project, onSaved }: ProjectFormProps) {
       </FormField>
 
       <FormField label="Company" htmlFor="company_id" error={errors.company_id}>
-        <select id="company_id" name="company_id" value={values.company_id} onChange={handleChange} className="form-input">
-          <option value="">{companies ? 'Choose a company' : 'Loading companies…'}</option>
-          {companies?.data.map((company) => (
-            <option key={company.id} value={company.id}>
-              {company.name} ({company.client_name})
-            </option>
-          ))}
-        </select>
+        <CompanySelect
+          id="company_id"
+          value={values.company_id ? Number(values.company_id) : null}
+          onChange={(companyId) => setValues({ ...values, company_id: String(companyId) })}
+        />
       </FormField>
 
       {formError && (

@@ -36,7 +36,7 @@ class ClientSummaryTest extends TestCase
     {
         $emptyClient = Client::factory()->create();
 
-        $this->getJson("/api/clients/{$emptyClient->id}/summary")
+        $this->getJson("/api/clients/{$emptyClient->client_id}/summary")
             ->assertOk()
             ->assertExactJson([
                 'data' => [
@@ -56,7 +56,7 @@ class ClientSummaryTest extends TestCase
         // Another client's data must not be counted
         Project::factory()->create();
 
-        $this->getJson("/api/clients/{$this->client->id}/summary")
+        $this->getJson("/api/clients/{$this->client->client_id}/summary")
             ->assertOk()
             ->assertJsonPath('data.companies_count', 2)
             ->assertJsonPath('data.projects_count', 3);
@@ -69,7 +69,7 @@ class ClientSummaryTest extends TestCase
         }
         Edit::factory()->active()->create(); // another client
 
-        $this->getJson("/api/clients/{$this->client->id}/summary")
+        $this->getJson("/api/clients/{$this->client->client_id}/summary")
             ->assertOk()
             ->assertJsonPath('data.active_edits_count', count(EditStatus::active()));
     }
@@ -85,7 +85,7 @@ class ClientSummaryTest extends TestCase
         $edit(['price' => null, 'is_paid' => false, 'status' => EditStatus::Pending]);     // no price
         Edit::factory()->create(['price' => 50, 'is_paid' => false, 'status' => EditStatus::Pending]); // another client
 
-        $this->getJson("/api/clients/{$this->client->id}/summary")
+        $this->getJson("/api/clients/{$this->client->client_id}/summary")
             ->assertOk()
             ->assertJsonPath('data.unpaid_total', 300.25);
     }
@@ -93,10 +93,10 @@ class ClientSummaryTest extends TestCase
     public function test_summary_runs_a_constant_number_of_queries(): void
     {
         Edit::factory()->for($this->project)->create();
-        $queriesForOne = $this->countQueries("/api/clients/{$this->client->id}/summary");
+        $queriesForOne = $this->countQueries("/api/clients/{$this->client->client_id}/summary");
 
         Edit::factory()->count(20)->for($this->project)->create();
-        $queriesForMany = $this->countQueries("/api/clients/{$this->client->id}/summary");
+        $queriesForMany = $this->countQueries("/api/clients/{$this->client->client_id}/summary");
 
         $this->assertSame($queriesForOne, $queriesForMany);
     }
@@ -110,7 +110,7 @@ class ClientSummaryTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        $this->getJson("/api/clients/{$this->client->id}/summary")->assertUnauthorized();
+        $this->getJson("/api/clients/{$this->client->client_id}/summary")->assertUnauthorized();
     }
 
     private function countQueries(string $url): int

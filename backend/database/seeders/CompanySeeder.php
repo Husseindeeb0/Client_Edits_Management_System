@@ -31,7 +31,7 @@ class CompanySeeder extends Seeder
             $client = Client::where('name', $clientName)->firstOrFail();
 
             foreach ($companyNames as $companyName) {
-                Company::firstOrCreate(['client_id' => $client->id, 'name' => $companyName]);
+                Company::firstOrCreate(['client_id' => $client->client_id, 'name' => $companyName]);
             }
         }
     }

@@ -29,7 +29,7 @@ class ListQueryValidationTest extends TestCase
     {
         $project = Project::factory()->create();
 
-        foreach (['/api/clients', '/api/companies', '/api/edits', "/api/projects/{$project->id}/edits", '/api/attachments'] as $url) {
+        foreach (['/api/clients', '/api/companies', '/api/edits', "/api/projects/{$project->project_id}/edits", '/api/attachments'] as $url) {
             $this->getJson("$url?search[]=x")
                 ->assertUnprocessable()
                 ->assertJsonValidationErrors(['search']);
@@ -48,7 +48,7 @@ class ListQueryValidationTest extends TestCase
         $client = Client::factory()->create();
         $company = Company::factory()->create();
 
-        $urls = ['/api/clients', '/api/companies', '/api/edits', "/api/projects/client/{$client->id}", "/api/projects/company/{$company->id}", '/api/attachments'];
+        $urls = ['/api/clients', '/api/companies', '/api/edits', "/api/projects/client/{$client->client_id}", "/api/projects/company/{$company->company_id}", '/api/attachments'];
 
         foreach ($urls as $url) {
             $this->getJson("$url?per_page=abc")->assertUnprocessable()->assertJsonValidationErrors(['per_page']);
@@ -74,7 +74,7 @@ class ListQueryValidationTest extends TestCase
     {
         $project = Project::factory()->create();
 
-        foreach (['/api/edits', "/api/projects/{$project->id}/edits"] as $url) {
+        foreach (['/api/edits', "/api/projects/{$project->project_id}/edits"] as $url) {
             $this->getJson("$url?status=Bogus")->assertUnprocessable()->assertJsonValidationErrors(['status']);
             $this->getJson("$url?priority=Urgent")->assertUnprocessable()->assertJsonValidationErrors(['priority']);
             $this->getJson("$url?is_paid=maybe")->assertUnprocessable()->assertJsonValidationErrors(['is_paid']);

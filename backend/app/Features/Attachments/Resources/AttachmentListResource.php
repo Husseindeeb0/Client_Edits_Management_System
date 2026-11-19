@@ -15,7 +15,7 @@ class AttachmentListResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->attachment_id,
             'edit_id' => $this->edit_id,
             'edit_title' => $this->edit?->title,
             'original_file_name' => $this->original_file_name,

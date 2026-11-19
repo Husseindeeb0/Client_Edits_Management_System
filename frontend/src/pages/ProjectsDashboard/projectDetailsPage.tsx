@@ -34,9 +34,9 @@ export default function ProjectDetailsPage() {
       <Breadcrumbs
         items={[
           { label: 'Clients', to: '/clients' },
-          { label: project.client?.name ?? 'Client', to: `/clients/${project.client?.id}` },
-          { label: project.company?.name ?? 'Company', to: `/companies/${project.company_id}` },
-          { label: project.name },
+          { label: project.client?.name ?? 'Client', type: 'Client', to: `/clients/${project.client?.id}` },
+          { label: project.company?.name ?? 'Company', type: 'Company', to: `/companies/${project.company_id}` },
+          { label: project.name, type: 'Project' },
         ]}
       />
 

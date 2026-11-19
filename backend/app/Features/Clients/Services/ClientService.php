@@ -38,7 +38,7 @@ class ClientService
             });
         }
 
-        return $query->latest('id')->paginate($perPage);
+        return $query->latest('client_id')->paginate($perPage);
     }
 
     /**
@@ -64,7 +64,7 @@ class ClientService
     public function getClientSummary(Client $client): ClientSummaryDTO
     {
         $clientEdits = Edit::query()->whereHas('project.company', function (Builder $query) use ($client) {
-            $query->where('client_id', $client->id);
+            $query->where('client_id', $client->client_id);
         });
 
         return new ClientSummaryDTO(
@@ -98,7 +98,7 @@ class ClientService
         $filePaths = DB::transaction(function () use ($client) {
             // Lock the client row so concurrent requests can't add active edits mid-check
             $lockedClient = Client::query()
-                ->whereKey($client->id)
+                ->whereKey($client->client_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -117,7 +117,7 @@ class ClientService
             // Collect file paths before the cascade removes the attachment rows
             $filePaths = Attachment::query()
                 ->whereHas('edit.project.company', function (Builder $query) use ($lockedClient) {
-                    $query->where('client_id', $lockedClient->id);
+                    $query->where('client_id', $lockedClient->client_id);
                 })
                 ->pluck('file_path')
                 ->all();

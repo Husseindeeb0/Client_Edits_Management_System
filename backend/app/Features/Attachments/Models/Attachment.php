@@ -29,6 +29,13 @@ class Attachment extends Model
     protected $table = 'attachments';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'attachment_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -45,6 +52,6 @@ class Attachment extends Model
      */
     public function edit(): BelongsTo
     {
-        return $this->belongsTo(Edit::class);
+        return $this->belongsTo(Edit::class, 'edit_id');
     }
 }

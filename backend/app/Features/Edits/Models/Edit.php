@@ -33,6 +33,13 @@ class Edit extends Model
     protected $table = 'edits';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'edit_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -69,7 +76,7 @@ class Edit extends Model
      */
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class);
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     /**
@@ -77,6 +84,6 @@ class Edit extends Model
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(Attachment::class, 'edit_id');
     }
 }

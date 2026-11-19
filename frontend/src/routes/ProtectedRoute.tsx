@@ -6,13 +6,13 @@ import { useAuth } from '../hooks/useAuth';
 /** Pages for the logged-in admin. Guests go to /login and come back here after logging in. */
 export default function ProtectedRoute() {
   const location = useLocation();
-  const { user, isLoading, error, retry } = useAuth();
+  const { isAuthenticated, isLoading, error, retry } = useAuth();
 
   if (isLoading) {
     return <FullPageStatus />;
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     // `error` means the check itself failed (e.g. server down), not "logged out"
     return error ? (
       <FullPageStatus error={getErrorMessage(error)} onRetry={retry} />

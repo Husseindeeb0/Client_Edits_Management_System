@@ -24,7 +24,7 @@ class UpdateCompanyRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'client_id' => ['sometimes', 'required', 'integer', 'exists:clients,id'],
+            'client_id' => ['sometimes', 'required', 'integer', 'exists:clients,client_id'],
         ];
     }
 

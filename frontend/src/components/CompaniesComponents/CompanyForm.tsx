@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useGetPaginatedClientsQuery } from '../../client/clientApi';
 import { useCreateCompanyMutation, useUpdateCompanyMutation } from '../../client/companyApi';
 import { getErrorMessage, getFieldErrors, isApiError } from '../../errors/apiError';
 import type { Company } from '../../types/company';
 import { validateCompany } from '../../validators/companyValidator';
 import type { CompanyFormValues } from '../../validators/companyValidator';
+import ClientSelect from '../ClientsComponents/ClientSelect';
 import FormField from '../SharedComponents/FormField';
 
 interface CompanyFormProps {
@@ -21,9 +21,6 @@ export default function CompanyForm({ company, onSaved }: CompanyFormProps) {
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // For the dropdown; 100 is the most the API returns per page
-  const { data: clients } = useGetPaginatedClientsQuery({ per_page: 100 });
-
   const [createCompany, createState] = useCreateCompanyMutation();
   const [updateCompany, updateState] = useUpdateCompanyMutation();
   const { isLoading, error } = company ? updateState : createState;
@@ -31,7 +28,7 @@ export default function CompanyForm({ company, onSaved }: CompanyFormProps) {
   const errors = { ...getFieldErrors(error), ...validationErrors };
   const formError = error && !(isApiError(error) && error.status === 422) ? getErrorMessage(error) : null;
 
-  function handleChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
     setValues({ ...values, [event.target.name]: event.target.value });
   }
 
@@ -62,14 +59,11 @@ export default function CompanyForm({ company, onSaved }: CompanyFormProps) {
       </FormField>
 
       <FormField label="Client" htmlFor="client_id" error={errors.client_id}>
-        <select id="client_id" name="client_id" value={values.client_id} onChange={handleChange} className="form-input">
-          <option value="">{clients ? 'Choose a client' : 'Loading clients…'}</option>
-          {clients?.data.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.name}
-            </option>
-          ))}
-        </select>
+        <ClientSelect
+          id="client_id"
+          value={values.client_id ? Number(values.client_id) : null}
+          onChange={(clientId) => setValues({ ...values, client_id: String(clientId) })}
+        />
       </FormField>
 
       {formError && (

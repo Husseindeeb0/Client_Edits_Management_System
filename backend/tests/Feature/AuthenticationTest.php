@@ -36,7 +36,7 @@ class AuthenticationTest extends TestCase
             ->assertJson([
                 'message' => 'Logged in successfully.',
                 'data' => [
-                    'id' => $user->id,
+                    'id' => $user->user_id,
                     'name' => $user->name,
                     'email' => 'admin@example.com',
                 ],
@@ -123,7 +123,7 @@ class AuthenticationTest extends TestCase
         $response->assertOk()
             ->assertExactJson([
                 'data' => [
-                    'id' => $user->id,
+                    'id' => $user->user_id,
                     'name' => $user->name,
                     'email' => $user->email,
                 ],
@@ -151,11 +151,12 @@ class AuthenticationTest extends TestCase
         $this->assertArrayNotHasKey('updated_at', $userPayload);
     }
 
-    public function test_get_me_rejects_unauthenticated_requests(): void
+    public function test_get_me_returns_null_for_guests(): void
     {
-        $response = $this->getJson('/api/auth/me');
-
-        $response->assertUnauthorized();
+        // Not being logged in is an expected answer, not an error
+        $this->getJson('/api/auth/me')
+            ->assertOk()
+            ->assertExactJson(['data' => null]);
     }
 
     public function test_logout_invalidates_session(): void
@@ -177,6 +178,10 @@ class AuthenticationTest extends TestCase
             ->assertJson(['message' => 'Logged out successfully.']);
 
         $this->assertGuest('web');
+
+        // Tests share one app; a real request would start with a fresh guard
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/auth/me')->assertExactJson(['data' => null]);
     }
 
     public function test_logout_rejects_unauthenticated_requests(): void

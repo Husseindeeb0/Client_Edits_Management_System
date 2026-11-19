@@ -6,14 +6,14 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function LoginPage() {
   const location = useLocation();
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return <FullPageStatus />;
   }
 
   // Already logged in, or just logged in: go back to the page that was asked for
-  if (user) {
+  if (isAuthenticated) {
     const from = (location.state as { from?: Location } | null)?.from;
 
     return <Navigate to={from ? `${from.pathname}${from.search}` : '/'} replace />;

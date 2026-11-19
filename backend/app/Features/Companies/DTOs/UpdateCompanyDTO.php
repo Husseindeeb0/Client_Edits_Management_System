@@ -17,4 +17,3 @@ readonly class UpdateCompanyDTO
         return $this->data;
     }
 }
-

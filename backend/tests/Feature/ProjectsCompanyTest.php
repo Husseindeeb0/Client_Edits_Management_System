@@ -27,14 +27,14 @@ class ProjectsCompanyTest extends TestCase
     public function test_can_get_paginated_projects_belonging_to_company(): void
     {
         $client = Client::create(['name' => 'Client 1', 'phone_number' => '123']);
-        $companyA = Company::create(['name' => 'Company A', 'client_id' => $client->id]);
-        $companyB = Company::create(['name' => 'Company B', 'client_id' => $client->id]);
+        $companyA = Company::create(['name' => 'Company A', 'client_id' => $client->client_id]);
+        $companyB = Company::create(['name' => 'Company B', 'client_id' => $client->client_id]);
 
-        $projectA1 = Project::create(['name' => 'Project 1A', 'company_id' => $companyA->id]);
-        $projectA2 = Project::create(['name' => 'Project 2A', 'company_id' => $companyA->id]);
-        $projectB = Project::create(['name' => 'Project 1B', 'company_id' => $companyB->id]);
+        $projectA1 = Project::create(['name' => 'Project 1A', 'company_id' => $companyA->company_id]);
+        $projectA2 = Project::create(['name' => 'Project 2A', 'company_id' => $companyA->company_id]);
+        $projectB = Project::create(['name' => 'Project 1B', 'company_id' => $companyB->company_id]);
 
-        $response = $this->getJson("/api/projects/company/{$companyA->id}");
+        $response = $this->getJson("/api/projects/company/{$companyA->company_id}");
 
         $response->assertOk()
             ->assertJsonCount(2, 'data')
@@ -47,9 +47,9 @@ class ProjectsCompanyTest extends TestCase
             ]);
 
         $projectIds = collect($response->json('data'))->pluck('id')->all();
-        $this->assertContains($projectA1->id, $projectIds);
-        $this->assertContains($projectA2->id, $projectIds);
-        $this->assertNotContains($projectB->id, $projectIds);
+        $this->assertContains($projectA1->project_id, $projectIds);
+        $this->assertContains($projectA2->project_id, $projectIds);
+        $this->assertNotContains($projectB->project_id, $projectIds);
     }
 
     public function test_company_projects_requires_authentication(): void
@@ -57,10 +57,10 @@ class ProjectsCompanyTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         $client = Client::create(['name' => 'Client', 'phone_number' => '123']);
-        $company = Company::create(['name' => 'Company', 'client_id' => $client->id]);
+        $company = Company::create(['name' => 'Company', 'client_id' => $client->client_id]);
 
         $this->withServerVariables(['HTTP_AUTHORIZATION' => ''])
-            ->getJson("/api/projects/company/{$company->id}")
+            ->getJson("/api/projects/company/{$company->company_id}")
             ->assertUnauthorized();
     }
 }

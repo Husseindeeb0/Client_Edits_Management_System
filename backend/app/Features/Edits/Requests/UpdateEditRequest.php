@@ -26,7 +26,7 @@ class UpdateEditRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'project_id' => ['sometimes', 'required', 'integer', 'exists:projects,id'],
+            'project_id' => ['sometimes', 'required', 'integer', 'exists:projects,project_id'],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'priority' => ['sometimes', 'required', 'string', Rule::enum(EditPriority::class)],

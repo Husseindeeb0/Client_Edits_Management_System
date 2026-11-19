@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attachments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('edit_id')->constrained('edits')->cascadeOnDelete();
+            $table->id('attachment_id');
+            $table->foreignId('edit_id')->constrained('edits', 'edit_id')->cascadeOnDelete();
             $table->string('file_path', 2048);
             $table->string('original_file_name', 255);
             $table->text('description')->nullable();

@@ -5,19 +5,10 @@ import { baseApi } from "./baseApi";
 /** Authentication feature: /api/auth/* */
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    /** The logged-in admin, or `null` when there is no session (401). */
+    /** The logged-in admin, or `null` when nobody is logged in (a normal 200 answer). */
     me: build.query<AuthUser | null, void>({
-      async queryFn(_arg, _api, _extraOptions, baseQuery) {
-        const result = await baseQuery("/auth/me");
-
-        if (result.error) {
-          return result.error.status === 401
-            ? { data: null }
-            : { error: result.error };
-        }
-
-        return { data: (result.data as Resource<AuthUser>).data };
-      },
+      query: () => "/auth/me",
+      transformResponse: (response: Resource<AuthUser | null>) => response.data,
       providesTags: ["Auth"],
     }),
 

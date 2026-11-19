@@ -39,7 +39,7 @@ export default function ClientDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[{ label: 'Clients', to: '/clients' }, { label: client.name }]} />
+      <Breadcrumbs items={[{ label: 'Clients', to: '/clients' }, { label: client.name, type: 'Client' }]} />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>

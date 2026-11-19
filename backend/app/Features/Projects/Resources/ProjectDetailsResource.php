@@ -16,15 +16,15 @@ class ProjectDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->project_id,
             'name' => $this->name,
             'company_id' => $this->company_id,
             'company' => $this->whenLoaded('company', fn () => [
-                'id' => $this->company->id,
+                'id' => $this->company->company_id,
                 'name' => $this->company->name,
             ]),
             'client' => $this->whenLoaded('company', fn () => [
-                'id' => $this->company->client->id,
+                'id' => $this->company->client->client_id,
                 'name' => $this->company->client->name,
             ]),
         ];

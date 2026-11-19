@@ -24,13 +24,13 @@ class AttachmentService
      */
     public function getPaginatedAttachments(?string $search, int $perPage): LengthAwarePaginator
     {
-        $query = Attachment::query()->with('edit:id,title');
+        $query = Attachment::query()->with('edit:edit_id,title');
 
         if ($search !== null) {
             $query->where('original_file_name', 'like', '%'.$search.'%');
         }
 
-        return $query->latest('id')->paginate($perPage);
+        return $query->latest('attachment_id')->paginate($perPage);
     }
 
     /**
@@ -40,7 +40,7 @@ class AttachmentService
      */
     public function getAttachmentsByEdit(Edit $edit): Collection
     {
-        return $edit->attachments()->latest('id')->get();
+        return $edit->attachments()->latest('attachment_id')->get();
     }
 
     /**
@@ -61,7 +61,7 @@ class AttachmentService
                     $storedPaths[] = $path;
 
                     $attachment = Attachment::create([
-                        'edit_id'            => $edit->id,
+                        'edit_id'            => $edit->edit_id,
                         'file_path'          => $path,
                         'original_file_name' => $file->getClientOriginalName(),
                         'description'        => $dto->description,

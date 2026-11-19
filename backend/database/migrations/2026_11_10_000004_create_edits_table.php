@@ -13,8 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('edits', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
+            $table->id('edit_id');
+            $table->foreignId('project_id')->constrained('projects', 'project_id')->cascadeOnDelete();
             $table->string('title', 255);
             $table->text('description')->nullable();
             $table->string('priority');

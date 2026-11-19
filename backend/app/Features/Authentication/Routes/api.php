@@ -7,9 +7,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:login');
 
+    // Open to guests: "nobody is logged in" is a normal answer here, not a 401
+    Route::get('/me', [AuthController::class, 'me']);
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me', [AuthController::class, 'me']);
     });
 });
-

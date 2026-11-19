@@ -17,7 +17,7 @@ class ClientDetailsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->client_id,
             'name' => $this->name,
             'phone_number' => $this->phone_number,
             'email' => $this->email,

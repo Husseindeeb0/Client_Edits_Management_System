@@ -31,6 +31,13 @@ class Project extends Model
     protected $table = 'projects';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'project_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -45,7 +52,7 @@ class Project extends Model
      */
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     /**
@@ -53,6 +60,6 @@ class Project extends Model
      */
     public function edits(): HasMany
     {
-        return $this->hasMany(Edit::class);
+        return $this->hasMany(Edit::class, 'project_id');
     }
 }

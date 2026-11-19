@@ -31,6 +31,13 @@ class Company extends Model
     protected $table = 'companies';
 
     /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'company_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -45,7 +52,7 @@ class Company extends Model
      */
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     /**
@@ -53,7 +60,6 @@ class Company extends Model
      */
     public function projects(): HasMany
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(Project::class, 'company_id');
     }
 }
-

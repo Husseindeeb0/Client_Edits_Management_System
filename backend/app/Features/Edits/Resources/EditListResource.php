@@ -15,7 +15,7 @@ class EditListResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->edit_id,
             'project_id' => $this->project_id,
             'project_name' => $this->project?->name,
             'title' => $this->title,

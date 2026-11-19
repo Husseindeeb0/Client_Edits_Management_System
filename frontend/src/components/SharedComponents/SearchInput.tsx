@@ -4,10 +4,12 @@ import type { ChangeEvent } from 'react';
 interface SearchInputProps {
   onSearch: (term: string) => void;
   placeholder?: string;
+  /** Width classes; lists use a narrow box, the SearchSelect panel a full-width one. */
+  className?: string;
 }
 
-/** Calls `onSearch` 300 ms after the admin stops typing, instead of on every key press. */
-export default function SearchInput({ onSearch, placeholder = 'Search…' }: SearchInputProps) {
+/** Calls `onSearch` 500 ms after the admin stops typing, instead of on every key press. */
+export default function SearchInput({ onSearch, placeholder = 'Search…', className = 'sm:max-w-xs' }: SearchInputProps) {
   const timer = useRef<number | undefined>(undefined);
 
   // Don't call onSearch after the page has been left
@@ -17,7 +19,7 @@ export default function SearchInput({ onSearch, placeholder = 'Search…' }: Sea
     const term = event.target.value.trim();
 
     clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => onSearch(term), 300);
+    timer.current = window.setTimeout(() => onSearch(term), 500);
   }
 
   return (
@@ -26,7 +28,7 @@ export default function SearchInput({ onSearch, placeholder = 'Search…' }: Sea
       placeholder={placeholder}
       aria-label={placeholder}
       onChange={handleChange}
-      className="form-input sm:max-w-xs"
+      className={`form-input ${className}`}
     />
   );
 }

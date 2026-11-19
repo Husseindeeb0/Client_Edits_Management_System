@@ -40,7 +40,7 @@ class AttachmentsTest extends TestCase
     private function upload(array $files, array $extra = []): \Illuminate\Testing\TestResponse
     {
         return $this->post(
-            "/api/edits/{$this->edit->id}/attachments",
+            "/api/edits/{$this->edit->edit_id}/attachments",
             array_merge(['files' => $files], $extra),
             ['Accept' => 'application/json'],
         );
@@ -63,7 +63,7 @@ class AttachmentsTest extends TestCase
             ->assertJson([
                 'message' => 'Attachments uploaded successfully.',
                 'data' => [[
-                    'edit_id' => $this->edit->id,
+                    'edit_id' => $this->edit->edit_id,
                     'original_file_name' => 'report.pdf',
                     'description' => 'Signed brief',
                 ]],
@@ -149,11 +149,11 @@ class AttachmentsTest extends TestCase
         $newer = Attachment::factory()->for($this->edit)->create();
         Attachment::factory()->create(); // belongs to another edit
 
-        $this->getJson("/api/edits/{$this->edit->id}/attachments")
+        $this->getJson("/api/edits/{$this->edit->edit_id}/attachments")
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.id', $newer->id)
-            ->assertJsonPath('data.1.id', $older->id);
+            ->assertJsonPath('data.0.id', $newer->attachment_id)
+            ->assertJsonPath('data.1.id', $older->attachment_id);
     }
 
     public function test_can_list_all_attachments_paginated_with_edit_title_newest_first(): void
@@ -169,9 +169,9 @@ class AttachmentsTest extends TestCase
                 'meta',
             ])
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.id', $newer->id)
+            ->assertJsonPath('data.0.id', $newer->attachment_id)
             ->assertJsonPath('data.0.edit_title', $newer->edit->title)
-            ->assertJsonPath('data.1.id', $older->id)
+            ->assertJsonPath('data.1.id', $older->attachment_id)
             ->assertJsonPath('data.1.edit_title', $this->edit->title);
     }
 
@@ -183,7 +183,7 @@ class AttachmentsTest extends TestCase
         $this->getJson('/api/attachments?search=contract')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $match->id);
+            ->assertJsonPath('data.0.id', $match->attachment_id);
     }
 
     public function test_listing_all_attachments_runs_a_constant_number_of_queries(): void
@@ -219,7 +219,7 @@ class AttachmentsTest extends TestCase
         $this->upload([$this->pdf('Final Design.pdf')])->assertCreated();
         $attachment = Attachment::sole();
 
-        $this->get("/api/attachments/{$attachment->id}/download")
+        $this->get("/api/attachments/{$attachment->attachment_id}/download")
             ->assertOk()
             ->assertDownload('Final Design.pdf');
     }
@@ -228,7 +228,7 @@ class AttachmentsTest extends TestCase
     {
         $attachment = Attachment::factory()->for($this->edit)->create();
 
-        $this->getJson("/api/attachments/{$attachment->id}/download")->assertNotFound();
+        $this->getJson("/api/attachments/{$attachment->attachment_id}/download")->assertNotFound();
     }
 
     // -------------------------------------------------------------------------
@@ -240,7 +240,7 @@ class AttachmentsTest extends TestCase
         $this->upload([$this->pdf()])->assertCreated();
         $attachment = Attachment::sole();
 
-        $this->deleteJson("/api/attachments/{$attachment->id}")
+        $this->deleteJson("/api/attachments/{$attachment->attachment_id}")
             ->assertOk()
             ->assertJson(['message' => 'Attachment deleted successfully.']);
 
@@ -252,7 +252,7 @@ class AttachmentsTest extends TestCase
     {
         $attachment = Attachment::factory()->for($this->edit)->create();
 
-        $this->deleteJson("/api/attachments/{$attachment->id}")->assertOk();
+        $this->deleteJson("/api/attachments/{$attachment->attachment_id}")->assertOk();
         $this->assertModelMissing($attachment);
     }
 
@@ -261,7 +261,7 @@ class AttachmentsTest extends TestCase
         $this->upload([$this->pdf('a.pdf'), $this->pdf('b.pdf')])->assertCreated();
         $paths = Attachment::pluck('file_path')->all();
 
-        $this->deleteJson("/api/edits/{$this->edit->id}")->assertOk();
+        $this->deleteJson("/api/edits/{$this->edit->edit_id}")->assertOk();
 
         $this->assertSame(0, Attachment::count());
         foreach ($paths as $path) {
@@ -279,7 +279,7 @@ class AttachmentsTest extends TestCase
         $this->upload([$this->pdf()])->assertCreated();
         $path = Attachment::sole()->file_path;
 
-        $this->deleteJson("/api/clients/{$client->id}")->assertOk();
+        $this->deleteJson("/api/clients/{$client->client_id}")->assertOk();
 
         Storage::disk('local')->assertMissing($path);
     }
@@ -293,7 +293,7 @@ class AttachmentsTest extends TestCase
         $this->upload([$this->pdf()])->assertCreated();
         $path = Attachment::sole()->file_path;
 
-        $this->deleteJson("/api/companies/{$company->id}")->assertOk();
+        $this->deleteJson("/api/companies/{$company->company_id}")->assertOk();
 
         Storage::disk('local')->assertMissing($path);
     }
@@ -308,7 +308,7 @@ class AttachmentsTest extends TestCase
         $this->upload([$this->pdf()])->assertCreated();
         $path = Attachment::sole()->file_path;
 
-        $this->deleteJson("/api/clients/{$client->id}")->assertUnprocessable();
+        $this->deleteJson("/api/clients/{$client->client_id}")->assertUnprocessable();
 
         Storage::disk('local')->assertExists($path);
     }
@@ -323,9 +323,9 @@ class AttachmentsTest extends TestCase
         $this->app['auth']->forgetGuards();
 
         $this->getJson('/api/attachments')->assertUnauthorized();
-        $this->getJson("/api/edits/{$this->edit->id}/attachments")->assertUnauthorized();
-        $this->postJson("/api/edits/{$this->edit->id}/attachments")->assertUnauthorized();
-        $this->getJson("/api/attachments/{$attachment->id}/download")->assertUnauthorized();
-        $this->deleteJson("/api/attachments/{$attachment->id}")->assertUnauthorized();
+        $this->getJson("/api/edits/{$this->edit->edit_id}/attachments")->assertUnauthorized();
+        $this->postJson("/api/edits/{$this->edit->edit_id}/attachments")->assertUnauthorized();
+        $this->getJson("/api/attachments/{$attachment->attachment_id}/download")->assertUnauthorized();
+        $this->deleteJson("/api/attachments/{$attachment->attachment_id}")->assertUnauthorized();
     }
 }

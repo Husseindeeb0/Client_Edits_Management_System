@@ -36,7 +36,7 @@ class CompaniesTest extends TestCase
     {
         $response = $this->postJson('/api/companies', [
             'name' => 'Acme Corporation',
-            'client_id' => $this->client->id,
+            'client_id' => $this->client->client_id,
         ]);
 
         $response->assertCreated()
@@ -44,7 +44,7 @@ class CompaniesTest extends TestCase
                 'data' => [
                     'id' => 1,
                     'name' => 'Acme Corporation',
-                    'client_id' => $this->client->id,
+                    'client_id' => $this->client->client_id,
                 ],
             ]);
 
@@ -52,7 +52,7 @@ class CompaniesTest extends TestCase
 
         $this->assertDatabaseHas('companies', [
             'name' => 'Acme Corporation',
-            'client_id' => $this->client->id,
+            'client_id' => $this->client->client_id,
         ]);
     }
 
@@ -69,8 +69,8 @@ class CompaniesTest extends TestCase
 
     public function test_can_retrieve_paginated_companies_with_client(): void
     {
-        Company::create(['name' => 'Company A', 'client_id' => $this->client->id]);
-        Company::create(['name' => 'Company B', 'client_id' => $this->client->id]);
+        Company::create(['name' => 'Company A', 'client_id' => $this->client->client_id]);
+        Company::create(['name' => 'Company B', 'client_id' => $this->client->client_id]);
 
         $response = $this->getJson('/api/companies');
 
@@ -91,8 +91,8 @@ class CompaniesTest extends TestCase
     {
         $client2 = Client::create(['name' => 'Wayne Enterprises Owner', 'phone_number' => '999']);
 
-        Company::create(['name' => 'Stark Industries', 'client_id' => $this->client->id]);
-        Company::create(['name' => 'Wayne Enterprises', 'client_id' => $client2->id]);
+        Company::create(['name' => 'Stark Industries', 'client_id' => $this->client->client_id]);
+        Company::create(['name' => 'Wayne Enterprises', 'client_id' => $client2->client_id]);
 
         $resByComp = $this->getJson('/api/companies?search=Stark');
         $resByComp->assertOk()->assertJsonCount(1, 'data');
@@ -105,25 +105,25 @@ class CompaniesTest extends TestCase
     {
         $otherClient = Client::create(['name' => 'Other Owner', 'phone_number' => '999']);
 
-        $mine = Company::create(['name' => 'Mine', 'client_id' => $this->client->id]);
-        Company::create(['name' => 'Theirs', 'client_id' => $otherClient->id]);
+        $mine = Company::create(['name' => 'Mine', 'client_id' => $this->client->client_id]);
+        Company::create(['name' => 'Theirs', 'client_id' => $otherClient->client_id]);
 
-        $this->getJson("/api/companies?client_id={$this->client->id}")
+        $this->getJson("/api/companies?client_id={$this->client->client_id}")
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $mine->id)
+            ->assertJsonPath('data.0.id', $mine->company_id)
             ->assertJsonStructure(['data', 'links', 'meta']);
     }
 
     public function test_client_filter_combines_with_search(): void
     {
-        Company::create(['name' => 'Stark Industries', 'client_id' => $this->client->id]);
-        Company::create(['name' => 'Stark Labs', 'client_id' => $this->client->id]);
-        Company::create(['name' => 'Acme', 'client_id' => $this->client->id]);
+        Company::create(['name' => 'Stark Industries', 'client_id' => $this->client->client_id]);
+        Company::create(['name' => 'Stark Labs', 'client_id' => $this->client->client_id]);
+        Company::create(['name' => 'Acme', 'client_id' => $this->client->client_id]);
         $otherClient = Client::create(['name' => 'Other Owner', 'phone_number' => '999']);
-        Company::create(['name' => 'Stark Elsewhere', 'client_id' => $otherClient->id]);
+        Company::create(['name' => 'Stark Elsewhere', 'client_id' => $otherClient->client_id]);
 
-        $this->getJson("/api/companies?client_id={$this->client->id}&search=Stark")
+        $this->getJson("/api/companies?client_id={$this->client->client_id}&search=Stark")
             ->assertOk()
             ->assertJsonCount(2, 'data');
     }
@@ -131,28 +131,28 @@ class CompaniesTest extends TestCase
     public function test_client_filter_returns_empty_list_for_client_without_companies(): void
     {
         $emptyClient = Client::create(['name' => 'Empty', 'phone_number' => '111']);
-        Company::create(['name' => 'Someone Else', 'client_id' => $this->client->id]);
+        Company::create(['name' => 'Someone Else', 'client_id' => $this->client->client_id]);
 
-        $this->getJson("/api/companies?client_id={$emptyClient->id}")
+        $this->getJson("/api/companies?client_id={$emptyClient->client_id}")
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
 
     public function test_can_get_company_details_without_projects(): void
     {
-        $company = Company::create(['name' => 'Cyberdyne', 'client_id' => $this->client->id]);
-        Project::create(['name' => 'Project T-800', 'company_id' => $company->id]);
+        $company = Company::create(['name' => 'Cyberdyne', 'client_id' => $this->client->client_id]);
+        Project::create(['name' => 'Project T-800', 'company_id' => $company->company_id]);
 
-        $response = $this->getJson("/api/companies/{$company->id}");
+        $response = $this->getJson("/api/companies/{$company->company_id}");
 
         $response->assertOk()
             ->assertJson([
                 'data' => [
-                    'id' => $company->id,
+                    'id' => $company->company_id,
                     'name' => 'Cyberdyne',
-                    'client_id' => $this->client->id,
+                    'client_id' => $this->client->client_id,
                     'client' => [
-                        'id' => $this->client->id,
+                        'id' => $this->client->client_id,
                     ],
                 ],
             ]);
@@ -162,32 +162,32 @@ class CompaniesTest extends TestCase
 
     public function test_can_update_company_partially(): void
     {
-        $company = Company::create(['name' => 'Old Company Name', 'client_id' => $this->client->id]);
+        $company = Company::create(['name' => 'Old Company Name', 'client_id' => $this->client->client_id]);
         $newClient = Client::create(['name' => 'New Client', 'phone_number' => '888']);
 
-        $response = $this->patchJson("/api/companies/{$company->id}", [
+        $response = $this->patchJson("/api/companies/{$company->company_id}", [
             'name' => 'Updated Company Name',
-            'client_id' => $newClient->id,
+            'client_id' => $newClient->client_id,
         ]);
 
         $response->assertOk()
             ->assertJson([
                 'data' => [
                     'name' => 'Updated Company Name',
-                    'client_id' => $newClient->id,
+                    'client_id' => $newClient->client_id,
                 ],
             ]);
 
         $company->refresh();
         $this->assertEquals('Updated Company Name', $company->name);
-        $this->assertEquals($newClient->id, $company->client_id);
+        $this->assertEquals($newClient->client_id, $company->client_id);
     }
 
     public function test_update_company_rejects_empty_payload(): void
     {
-        $company = Company::create(['name' => 'Some Company', 'client_id' => $this->client->id]);
+        $company = Company::create(['name' => 'Some Company', 'client_id' => $this->client->client_id]);
 
-        $response = $this->patchJson("/api/companies/{$company->id}", []);
+        $response = $this->patchJson("/api/companies/{$company->company_id}", []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['payload']);
@@ -195,42 +195,42 @@ class CompaniesTest extends TestCase
 
     public function test_cannot_delete_company_with_active_edits(): void
     {
-        $company = Company::create(['name' => 'Locked Company', 'client_id' => $this->client->id]);
-        $project = Project::create(['name' => 'Project Alpha', 'company_id' => $company->id]);
+        $company = Company::create(['name' => 'Locked Company', 'client_id' => $this->client->client_id]);
+        $project = Project::create(['name' => 'Project Alpha', 'company_id' => $company->company_id]);
 
         Edit::create([
-            'project_id' => $project->id,
+            'project_id' => $project->project_id,
             'title' => 'In Progress Edit',
             'priority' => 'High',
             'status' => 'In Progress',
         ]);
 
-        $response = $this->deleteJson("/api/companies/{$company->id}");
+        $response = $this->deleteJson("/api/companies/{$company->company_id}");
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['company']);
 
-        $this->assertDatabaseHas('companies', ['id' => $company->id]);
+        $this->assertDatabaseHas('companies', ['company_id' => $company->company_id]);
     }
 
     public function test_can_delete_company_with_inactive_edits(): void
     {
-        $company = Company::create(['name' => 'Deletable Company', 'client_id' => $this->client->id]);
-        $project = Project::create(['name' => 'Project Beta', 'company_id' => $company->id]);
+        $company = Company::create(['name' => 'Deletable Company', 'client_id' => $this->client->client_id]);
+        $project = Project::create(['name' => 'Project Beta', 'company_id' => $company->company_id]);
 
         Edit::create([
-            'project_id' => $project->id,
+            'project_id' => $project->project_id,
             'title' => 'Completed Edit',
             'priority' => 'Medium',
             'status' => 'Done',
         ]);
 
-        $response = $this->deleteJson("/api/companies/{$company->id}");
+        $response = $this->deleteJson("/api/companies/{$company->company_id}");
 
         $response->assertOk()
             ->assertJson(['message' => 'Company deleted successfully.']);
 
-        $this->assertDatabaseMissing('companies', ['id' => $company->id]);
+        $this->assertDatabaseMissing('companies', ['company_id' => $company->company_id]);
     }
 
     public function test_unauthenticated_requests_are_rejected(): void

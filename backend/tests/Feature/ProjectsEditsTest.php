@@ -32,10 +32,10 @@ class ProjectsEditsTest extends TestCase
         Edit::factory()->count(2)->for($this->project)->create();
         Edit::factory()->create(); // another project
 
-        $this->getJson("/api/projects/{$this->project->id}/edits")
+        $this->getJson("/api/projects/{$this->project->project_id}/edits")
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.project_id', $this->project->id)
+            ->assertJsonPath('data.0.project_id', $this->project->project_id)
             ->assertJsonPath('data.0.project_name', 'Website Redesign');
     }
 
@@ -51,7 +51,7 @@ class ProjectsEditsTest extends TestCase
             'title' => 'New page', 'status' => EditStatus::Done, 'priority' => EditPriority::Low, 'is_paid' => true,
         ]);
 
-        $url = "/api/projects/{$this->project->id}/edits";
+        $url = "/api/projects/{$this->project->project_id}/edits";
 
         $this->getJson("$url?search=Fix")->assertJsonCount(2, 'data');
         $this->getJson("$url?status=Done")->assertJsonCount(2, 'data');
@@ -68,19 +68,19 @@ class ProjectsEditsTest extends TestCase
         Edit::factory()->for($this->project)->create();
         Edit::factory()->count(3)->for($otherProject)->create();
 
-        $this->getJson("/api/projects/{$this->project->id}/edits?project_id={$otherProject->id}")
+        $this->getJson("/api/projects/{$this->project->project_id}/edits?project_id={$otherProject->project_id}")
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.project_id', $this->project->id);
+            ->assertJsonPath('data.0.project_id', $this->project->project_id);
     }
 
     public function test_listing_project_edits_runs_a_constant_number_of_queries(): void
     {
         Edit::factory()->for($this->project)->create();
-        $queriesForOne = $this->countQueries("/api/projects/{$this->project->id}/edits");
+        $queriesForOne = $this->countQueries("/api/projects/{$this->project->project_id}/edits");
 
         Edit::factory()->count(9)->for($this->project)->create();
-        $queriesForTen = $this->countQueries("/api/projects/{$this->project->id}/edits");
+        $queriesForTen = $this->countQueries("/api/projects/{$this->project->project_id}/edits");
 
         $this->assertSame($queriesForOne, $queriesForTen, 'Listing project edits must not run one query per edit (N+1).');
     }
@@ -94,7 +94,7 @@ class ProjectsEditsTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        $this->getJson("/api/projects/{$this->project->id}/edits")->assertUnauthorized();
+        $this->getJson("/api/projects/{$this->project->project_id}/edits")->assertUnauthorized();
     }
 
     private function countQueries(string $url): int

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useCreateEditMutation, useUpdateEditMutation } from '../../client/editApi';
-import { useGetPaginatedProjectsQuery } from '../../client/projectApi';
 import { getErrorMessage, getFieldErrors, isApiError } from '../../errors/apiError';
 import { EDIT_PRIORITIES, EDIT_STATUSES } from '../../types/edit';
 import type { Edit } from '../../types/edit';
 import { validateEdit } from '../../validators/editValidator';
 import type { EditFormValues } from '../../validators/editValidator';
+import ProjectSelect from '../ProjectsComponents/ProjectSelect';
 import FormField from '../SharedComponents/FormField';
 
 interface EditFormProps {
@@ -29,9 +29,6 @@ export default function EditForm({ edit, defaultProjectId, onSaved }: EditFormPr
     due_date: edit?.due_date ?? '',
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  // For the dropdown; 100 is the most the API returns per page
-  const { data: projects } = useGetPaginatedProjectsQuery({ per_page: 100 });
 
   const [createEdit, createState] = useCreateEditMutation();
   const [updateEdit, updateState] = useUpdateEditMutation();
@@ -74,14 +71,11 @@ export default function EditForm({ edit, defaultProjectId, onSaved }: EditFormPr
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       <FormField label="Project" htmlFor="project_id" error={errors.project_id}>
-        <select id="project_id" name="project_id" value={values.project_id} onChange={handleChange} className="form-input">
-          <option value="">{projects ? 'Choose a project' : 'Loading projects…'}</option>
-          {projects?.data.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name} ({project.company_name})
-            </option>
-          ))}
-        </select>
+        <ProjectSelect
+          id="project_id"
+          value={values.project_id ? Number(values.project_id) : null}
+          onChange={(projectId) => setValues({ ...values, project_id: String(projectId) })}
+        />
       </FormField>
 
       <FormField label="Title" htmlFor="title" error={errors.title}>

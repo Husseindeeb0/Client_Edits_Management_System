@@ -112,7 +112,7 @@ class EditSeeder extends Seeder
             $project = Project::where('name', $projectName)->firstOrFail();
 
             foreach ($edits as [$title, $priority, $status, $price, $isPaid, $dueInDays, $description]) {
-                Edit::firstOrCreate(['project_id' => $project->id, 'title' => $title], [
+                Edit::firstOrCreate(['project_id' => $project->project_id, 'title' => $title], [
                     'description' => $description,
                     'priority' => $priority,
                     'status' => $status,
