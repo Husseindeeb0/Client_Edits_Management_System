@@ -11,7 +11,7 @@ import type {
   UpdateClientPayload,
 } from "../types/client";
 import { toQueryParams } from "../lib/queryParams";
-import { baseApi, LIST_ID, listTags } from "./baseApi";
+import { baseApi, LIST_ID, listTags, nextPage } from "./baseApi";
 
 /** Clients feature: /api/clients/* */
 export const clientApi = baseApi.injectEndpoints({
@@ -22,6 +22,16 @@ export const clientApi = baseApi.injectEndpoints({
         params: toQueryParams(params ?? {}),
       }),
       providesTags: (result) => listTags("Client", result?.data),
+    }),
+
+    /** The same list, loaded page after page as it is scrolled (ClientSelect). The argument is the search term. */
+    getInfiniteClients: build.infiniteQuery<Paginated<Client>, string, number>({
+      infiniteQueryOptions: { initialPageParam: 1, getNextPageParam: nextPage },
+      query: ({ queryArg, pageParam }) => ({
+        url: "/clients",
+        params: toQueryParams({ search: queryArg, page: pageParam }),
+      }),
+      providesTags: (result) => listTags("Client", result?.pages.flatMap((page) => page.data)),
     }),
 
     getClientDetails: build.query<Client, number>({
@@ -81,6 +91,7 @@ export const clientApi = baseApi.injectEndpoints({
 
 export const {
   useGetPaginatedClientsQuery,
+  useGetInfiniteClientsInfiniteQuery,
   useGetClientDetailsQuery,
   useGetClientSummaryQuery,
   useCreateClientMutation,

@@ -9,6 +9,7 @@ import CompanyPage from '../pages/CompaniesDashboard/companyPage';
 import EditDetailsPage from '../pages/EditsDashboard/editDetailsPage';
 import EditPage from '../pages/EditsDashboard/editPage';
 import NotFoundPage from '../pages/notFoundPage';
+import ProfilePage from '../pages/ProfileDashboard/profilePage';
 import ProjectDetailsPage from '../pages/ProjectsDashboard/projectDetailsPage';
 import ProjectPage from '../pages/ProjectsDashboard/projectPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
           { path: 'edits', element: <EditPage /> },
           { path: 'edits/:editId', element: <EditDetailsPage /> },
           { path: 'attachments', element: <AttachmentPage /> },
+          { path: 'profile', element: <ProfilePage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

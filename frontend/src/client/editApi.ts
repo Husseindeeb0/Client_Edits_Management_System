@@ -13,7 +13,7 @@ import { baseApi, LIST_ID, listTags } from "./baseApi";
 /** Edits feature: /api/edits/* */
 export const editApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    /** `{ client_id, active: true }` gives the client details "Active edits" tab. */
+    /** `{ client_id }` gives the client details "Edits" tab. */
     getPaginatedEdits: build.query<
       Paginated<EditListItem>,
       EditListParams | void

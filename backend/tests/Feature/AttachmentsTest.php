@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Features\Attachments\DTOs\UploadAttachmentsDTO;
 use App\Features\Attachments\Models\Attachment;
 use App\Features\Attachments\Requests\StoreAttachmentRequest;
+use App\Features\Attachments\Services\AttachmentService;
 use App\Features\Authentication\Models\User;
 use App\Features\Clients\Models\Client;
 use App\Features\Companies\Models\Company;
@@ -14,6 +16,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 class AttachmentsTest extends TestCase
@@ -85,6 +89,26 @@ class AttachmentsTest extends TestCase
 
         $response->assertCreated()->assertJsonCount(3, 'data');
         $this->assertSame(3, $this->edit->attachments()->count());
+    }
+
+    public function test_upload_saves_nothing_when_a_file_cannot_be_written(): void
+    {
+        $saved = $this->pdf('saved.pdf');
+
+        // A disk write that fails: store() returns false instead of a path
+        $broken = Mockery::mock($this->pdf('broken.pdf'))->makePartial();
+        $broken->shouldReceive('store')->andReturn(false);
+
+        try {
+            app(AttachmentService::class)->uploadAttachments($this->edit, new UploadAttachmentsDTO([$saved, $broken]));
+            $this->fail('The upload should have failed.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('broken.pdf', $e->getMessage());
+        }
+
+        // The first file's row was rolled back and its file removed from disk
+        $this->assertSame(0, Attachment::count());
+        $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
     public function test_upload_requires_at_least_one_file(): void

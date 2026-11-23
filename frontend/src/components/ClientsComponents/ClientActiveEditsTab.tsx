@@ -37,11 +37,11 @@ const columns: Column<EditListItem>[] = [
   { header: 'Price', render: (edit) => formatMoney(edit.price) },
 ];
 
-/** The client's Pending, Confirmed and In Progress edits. */
+/** All of the client's edits, whatever their status. */
 export default function ClientActiveEditsTab({ clientId }: { clientId: number }) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const { data, isLoading, error, refetch } = useGetPaginatedEditsQuery({ client_id: clientId, active: true, page, search });
+  const { data, isLoading, error, refetch } = useGetPaginatedEditsQuery({ client_id: clientId, page, search });
 
   function handleSearch(term: string) {
     setSearch(term);
@@ -57,7 +57,7 @@ export default function ClientActiveEditsTab({ clientId }: { clientId: number })
       ) : error ? (
         <ErrorState message={getErrorMessage(error)} onRetry={refetch} />
       ) : !data || data.data.length === 0 ? (
-        <EmptyState message="No active edits." />
+        <EmptyState message="No edits yet." />
       ) : (
         <>
           <DataTable columns={columns} rows={data.data} />

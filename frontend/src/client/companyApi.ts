@@ -8,7 +8,7 @@ import type {
   UpdateCompanyPayload,
 } from "../types/company";
 import { toQueryParams } from "../lib/queryParams";
-import { baseApi, LIST_ID, listTags } from "./baseApi";
+import { baseApi, LIST_ID, listTags, nextPage } from "./baseApi";
 
 /** Companies feature: /api/companies/* */
 export const companyApi = baseApi.injectEndpoints({
@@ -23,6 +23,16 @@ export const companyApi = baseApi.injectEndpoints({
         params: toQueryParams(params ?? {}),
       }),
       providesTags: (result) => listTags("Company", result?.data),
+    }),
+
+    /** The same list, loaded page after page as it is scrolled (CompanySelect). The argument is the search term. */
+    getInfiniteCompanies: build.infiniteQuery<Paginated<CompanyListItem>, string, number>({
+      infiniteQueryOptions: { initialPageParam: 1, getNextPageParam: nextPage },
+      query: ({ queryArg, pageParam }) => ({
+        url: "/companies",
+        params: toQueryParams({ search: queryArg, page: pageParam }),
+      }),
+      providesTags: (result) => listTags("Company", result?.pages.flatMap((page) => page.data)),
     }),
 
     getCompanyDetails: build.query<CompanyDetails, number>({
@@ -78,6 +88,7 @@ export const companyApi = baseApi.injectEndpoints({
 
 export const {
   useGetPaginatedCompaniesQuery,
+  useGetInfiniteCompaniesInfiniteQuery,
   useGetCompanyDetailsQuery,
   useCreateCompanyMutation,
   useUpdateCompanyMutation,

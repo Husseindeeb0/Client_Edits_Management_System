@@ -9,6 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentService
@@ -58,6 +59,13 @@ class AttachmentService
                 foreach ($dto->files as $file) {
                     // Store file in private local disk under 'attachments/{year}/{month}'
                     $path = $file->store('attachments/'.date('Y/m'), 'local');
+
+                    // store() returns false instead of throwing when the disk write fails;
+                    // throwing here rolls back the rows and removes the files already saved
+                    if ($path === false) {
+                        throw new RuntimeException("Could not save the file [{$file->getClientOriginalName()}].");
+                    }
+
                     $storedPaths[] = $path;
 
                     $attachment = Attachment::create([

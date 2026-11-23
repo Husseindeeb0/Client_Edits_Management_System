@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGetPaginatedProjectsQuery, useGetProjectDetailsQuery } from '../../client/projectApi';
+import { useGetInfiniteProjectsInfiniteQuery, useGetProjectDetailsQuery } from '../../client/projectApi';
 import SearchSelect from '../SharedComponents/SearchSelect';
 
 interface ProjectSelectProps {
@@ -8,14 +8,13 @@ interface ProjectSelectProps {
   onChange: (projectId: number) => void;
 }
 
-/** Choose a project: searchable (by project, company or client name), one page at a time. */
+/** Choose a project: searchable (by project, company or client name), more projects load while scrolling. */
 export default function ProjectSelect({ id, value, onChange }: ProjectSelectProps) {
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [pickedLabel, setPickedLabel] = useState<string>();
 
-  const { data, isFetching } = useGetPaginatedProjectsQuery({ search, page });
-  // The current project may not be on this page, so get its name on its own (when editing)
+  const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } = useGetInfiniteProjectsInfiniteQuery(search);
+  // The current project may not be loaded yet, so get its name on its own (when editing)
   const { data: current } = useGetProjectDetailsQuery(value ?? 0, { skip: value === null || pickedLabel !== undefined });
 
   return (
@@ -24,15 +23,14 @@ export default function ProjectSelect({ id, value, onChange }: ProjectSelectProp
       placeholder="Choose a project"
       selectedId={value}
       selectedLabel={pickedLabel ?? current?.name}
-      options={(data?.data ?? []).map((project) => ({ id: project.id, label: project.name, hint: project.company_name }))}
-      isLoading={isFetching}
-      page={data?.meta.current_page ?? 1}
-      lastPage={data?.meta.last_page ?? 1}
-      onPageChange={setPage}
-      onSearch={(term) => {
-        setSearch(term);
-        setPage(1);
-      }}
+      options={(data?.pages ?? []).flatMap((page) =>
+        page.data.map((project) => ({ id: project.id, label: project.name, hint: project.company_name })),
+      )}
+      isLoading={isFetching && !isFetchingNextPage}
+      isLoadingMore={isFetchingNextPage}
+      hasMore={hasNextPage}
+      onLoadMore={fetchNextPage}
+      onSearch={setSearch}
       onSelect={(option) => {
         setPickedLabel(option.label);
         onChange(option.id);

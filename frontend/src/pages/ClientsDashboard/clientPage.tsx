@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router';
-import { useGetPaginatedClientsQuery } from '../../client/clientApi';
+import { toast } from 'sonner';
+import { useGetPaginatedClientsQuery, useUpdateClientMutation } from '../../client/clientApi';
 import ClientForm from '../../components/ClientsComponents/ClientForm';
 import DeleteClientDialog from '../../components/ClientsComponents/DeleteClientDialog';
 import DataTable from '../../components/SharedComponents/DataTable';
 import type { Column } from '../../components/SharedComponents/DataTable';
 import EmptyState from '../../components/SharedComponents/EmptyState';
 import ErrorState from '../../components/SharedComponents/ErrorState';
+import InlineDateInput from '../../components/SharedComponents/InlineDateInput';
 import LoadingState from '../../components/SharedComponents/LoadingState';
 import Modal from '../../components/SharedComponents/Modal';
 import Pagination from '../../components/SharedComponents/Pagination';
@@ -21,6 +23,7 @@ export default function ClientPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | undefined>(undefined);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [updateClient] = useUpdateClientMutation();
 
   const { data, isLoading, error, refetch } = useGetPaginatedClientsQuery({ page, search });
 
@@ -34,6 +37,19 @@ export default function ClientPage() {
     setIsFormOpen(true);
   }
 
+  /** Saves the follow-up date straight from the table and reports the result in a toast. */
+  async function saveFollowUpDate(client: Client, date: string | null) {
+    const result = await updateClient({ id: client.id, changes: { last_follow_up_date: date } });
+
+    if (result.error) {
+      toast.error(getErrorMessage(result.error));
+      return false;
+    }
+
+    toast.success(date ? `Last follow-up of "${client.name}" changed to ${date}.` : `Last follow-up of "${client.name}" removed.`);
+    return true;
+  }
+
   const columns: Column<Client>[] = [
     {
       header: 'Name',
@@ -45,7 +61,18 @@ export default function ClientPage() {
     },
     { header: 'Phone', render: (client) => client.phone_number },
     { header: 'Email', render: (client) => client.email ?? '–' },
-    { header: 'Last follow-up', render: (client) => client.last_follow_up_date ?? '–' },
+    {
+      // Quick edit: saved as soon as the date is picked (on blur or Enter)
+      header: 'Last follow-up',
+      render: (client) => (
+        <InlineDateInput
+          key={`${client.id}-${client.last_follow_up_date}`}
+          value={client.last_follow_up_date}
+          label={`Last follow-up of ${client.name}`}
+          onSave={(date) => saveFollowUpDate(client, date)}
+        />
+      ),
+    },
     {
       header: 'Actions',
       render: (client) => (
@@ -94,7 +121,6 @@ export default function ClientPage() {
         client={deletingClient}
         onClose={() => setDeletingClient(null)}
         onDeleted={() => setDeletingClient(null)}
-      />
-    </div>
+      />    </div>
   );
 }

@@ -12,5 +12,7 @@ Route::prefix('auth')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::patch('/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/password', [AuthController::class, 'changePassword']);
     });
 });

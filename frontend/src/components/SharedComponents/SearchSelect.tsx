@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react';
+import { ChevronDown, LoaderCircle } from 'lucide-react';
 import SearchInput from './SearchInput';
 
 export interface SelectOption {
@@ -15,19 +15,25 @@ interface SearchSelectProps {
   placeholder: string;
   selectedId: number | null;
   selectedLabel?: string;
-  /** The current page of results only, not the whole list. */
+  /** Every page loaded so far, in order. */
   options: SelectOption[];
+  /** Loading the first page (e.g. after a new search). */
   isLoading: boolean;
-  page: number;
-  lastPage: number;
-  onPageChange: (page: number) => void;
+  /** Loading the next page, shown under the loaded options. */
+  isLoadingMore: boolean;
+  hasMore: boolean;
+  onLoadMore: () => void;
   onSearch: (term: string) => void;
   onSelect: (option: SelectOption) => void;
 }
 
+// Start loading the next page a little before the bottom is reached
+const LOAD_MORE_OFFSET_PX = 40;
+
 /**
- * A dropdown with a search box and paginated results, for choosing one record
- * out of many. The data comes from the parent (ClientSelect, CompanySelect, ...).
+ * A dropdown with a search box whose results load page after page as the list
+ * is scrolled, for choosing one record out of many. The data comes from the
+ * parent (ClientSelect, CompanySelect, ...).
  */
 export default function SearchSelect({
   id,
@@ -36,9 +42,9 @@ export default function SearchSelect({
   selectedLabel,
   options,
   isLoading,
-  page,
-  lastPage,
-  onPageChange,
+  isLoadingMore,
+  hasMore,
+  onLoadMore,
   onSearch,
   onSelect,
 }: SearchSelectProps) {
@@ -93,7 +99,18 @@ export default function SearchSelect({
           ) : options.length === 0 ? (
             <p className="py-4 text-center text-sm text-slate-500">No results.</p>
           ) : (
-            <ul role="listbox" className="max-h-56 overflow-y-auto">
+            <ul
+              role="listbox"
+              onScroll={(event) => {
+                const list = event.currentTarget;
+                const nearBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - LOAD_MORE_OFFSET_PX;
+
+                if (nearBottom && hasMore && !isLoadingMore) {
+                  onLoadMore();
+                }
+              }}
+              className="thin-scrollbar max-h-56 overflow-y-auto pr-1"
+            >
               {options.map((option) => (
                 <li key={option.id}>
                   <button
@@ -113,33 +130,13 @@ export default function SearchSelect({
                   </button>
                 </li>
               ))}
-            </ul>
-          )}
 
-          {lastPage > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-xs text-slate-400">
-              <button
-                type="button"
-                onClick={() => onPageChange(page - 1)}
-                disabled={page <= 1}
-                className="rounded p-1 hover:bg-slate-800 disabled:opacity-40"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="size-4" />
-              </button>
-              <span>
-                Page {page} of {lastPage}
-              </span>
-              <button
-                type="button"
-                onClick={() => onPageChange(page + 1)}
-                disabled={page >= lastPage}
-                className="rounded p-1 hover:bg-slate-800 disabled:opacity-40"
-                aria-label="Next page"
-              >
-                <ChevronRight className="size-4" />
-              </button>
-            </div>
+              {isLoadingMore && (
+                <li className="flex justify-center py-2">
+                  <LoaderCircle className="size-4 animate-spin text-slate-500" aria-label="Loading more" />
+                </li>
+              )}
+            </ul>
           )}
         </div>
       )}

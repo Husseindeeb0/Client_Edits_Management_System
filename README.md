@@ -3,7 +3,7 @@
 A web app for one administrator to track clients and the edit requests they send.
 Data is organized as **Client → Company → Project → Edit → Attachments**.
 
-- Client pages show summary cards (companies, projects, active edits, unpaid total) and tabs for active edits, projects and companies.
+- Client pages show summary cards (companies, projects, active edits, unpaid total) and tabs for edits, projects and companies.
 - Every list has search and pagination; edits can also be filtered by status, priority and paid state.
 - Each edit can have files attached (upload, download, delete).
 - A client, company or project can't be deleted while it still has active edits (Pending, Confirmed or In Progress).
@@ -136,7 +136,7 @@ which answers `{ "data": null }` (200) when nobody is logged in.
 
 | Feature | Endpoints |
 |---|---|
-| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
+| Auth | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `PATCH /auth/profile` (name, email), `PUT /auth/password` (`current_password`, `new_password`) |
 | Clients | `GET/POST /clients`, `GET/PATCH/DELETE /clients/{id}`, `GET /clients/{id}/summary` |
 | Companies | `GET/POST /companies` (`?client_id=` filter), `GET/PATCH/DELETE /companies/{id}` |
 | Projects | `GET/POST /projects`, `GET/PATCH/DELETE /projects/{id}`, `GET /projects/client/{id}`, `GET /projects/company/{id}`, `GET /projects/{id}/edits` |

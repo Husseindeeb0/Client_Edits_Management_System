@@ -72,16 +72,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="flex items-center justify-between gap-3 border-t border-slate-800 px-5 py-4">
-          <span className="truncate text-sm text-slate-300">{user?.name}</span>
+        {/* Account: the name and email open the profile page */}
+        <div className="flex items-center gap-2 border-t border-slate-800 p-3">
+          <NavLink
+            to="/profile"
+            onClick={onClose}
+            title="Profile"
+            className={({ isActive }) =>
+              `flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-2 ${
+                isActive ? 'bg-slate-800' : 'hover:bg-slate-800'
+              }`
+            }
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-600/20 text-sm font-semibold text-teal-300">
+              {user?.name.charAt(0).toUpperCase()}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium text-slate-100">{user?.name}</span>
+              <span className="block truncate text-xs text-slate-400">{user?.email}</span>
+            </span>
+          </NavLink>
+
           <button
             type="button"
             onClick={() => logout()}
             disabled={isLoading}
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white disabled:opacity-50"
+            title="Log out"
+            aria-label="Log out"
+            className="shrink-0 rounded-md p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50"
           >
-            <LogOut className="size-4" />
-            Log out
+            <LogOut className="size-5" />
           </button>
         </div>
       </aside>

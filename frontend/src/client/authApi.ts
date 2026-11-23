@@ -1,5 +1,5 @@
 import type { MessageResponse, Resource } from "../types/api";
-import type { AuthUser, LoginPayload } from "../types/auth";
+import type { AuthUser, ChangePasswordPayload, LoginPayload, UpdateProfilePayload } from "../types/auth";
 import { baseApi } from "./baseApi";
 
 /** Authentication feature: /api/auth/* */
@@ -22,7 +22,25 @@ export const authApi = baseApi.injectEndpoints({
       query: () => ({ url: "/auth/logout", method: "POST" }),
       invalidatesTags: ["Auth"],
     }),
+
+    updateProfile: build.mutation<AuthUser, UpdateProfilePayload>({
+      query: (body) => ({ url: "/auth/profile", method: "PATCH", body }),
+      transformResponse: (response: Resource<AuthUser>) => response.data,
+      // Refetch "me" so the new name shows in the sidebar
+      invalidatesTags: ["Auth"],
+    }),
+
+    /** Fails with 422 (`errors.current_password`) when the current password is wrong. */
+    changePassword: build.mutation<MessageResponse, ChangePasswordPayload>({
+      query: (body) => ({ url: "/auth/password", method: "PUT", body }),
+    }),
   }),
 });
 
-export const { useMeQuery, useLoginMutation, useLogoutMutation } = authApi;
+export const {
+  useMeQuery,
+  useLoginMutation,
+  useLogoutMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+} = authApi;

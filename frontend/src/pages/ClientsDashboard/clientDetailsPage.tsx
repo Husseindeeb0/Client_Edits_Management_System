@@ -15,7 +15,7 @@ import Tabs from '../../components/SharedComponents/Tabs';
 import { getErrorMessage } from '../../errors/apiError';
 
 const TABS = [
-  { id: 'active-edits', label: 'Active edits' },
+  { id: 'active-edits', label: 'Edits' },
   { id: 'projects', label: 'Projects' },
   { id: 'companies', label: 'Companies' },
 ];

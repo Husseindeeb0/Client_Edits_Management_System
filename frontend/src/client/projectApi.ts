@@ -15,7 +15,7 @@ import type {
   UpdateProjectPayload,
 } from "../types/project";
 import { toQueryParams } from "../lib/queryParams";
-import { baseApi, LIST_ID, listTags } from "./baseApi";
+import { baseApi, LIST_ID, listTags, nextPage } from "./baseApi";
 
 /** Projects feature: /api/projects/* */
 export const projectApi = baseApi.injectEndpoints({
@@ -29,6 +29,16 @@ export const projectApi = baseApi.injectEndpoints({
         params: toQueryParams(params ?? {}),
       }),
       providesTags: (result) => listTags("Project", result?.data),
+    }),
+
+    /** The same list, loaded page after page as it is scrolled (ProjectSelect). The argument is the search term. */
+    getInfiniteProjects: build.infiniteQuery<Paginated<ProjectListItem>, string, number>({
+      infiniteQueryOptions: { initialPageParam: 1, getNextPageParam: nextPage },
+      query: ({ queryArg, pageParam }) => ({
+        url: "/projects",
+        params: toQueryParams({ search: queryArg, page: pageParam }),
+      }),
+      providesTags: (result) => listTags("Project", result?.pages.flatMap((page) => page.data)),
     }),
 
     /** Client details "Projects" tab. */
@@ -115,6 +125,7 @@ export const projectApi = baseApi.injectEndpoints({
 
 export const {
   useGetPaginatedProjectsQuery,
+  useGetInfiniteProjectsInfiniteQuery,
   useGetClientProjectsQuery,
   useGetCompanyProjectsQuery,
   useGetProjectDetailsQuery,

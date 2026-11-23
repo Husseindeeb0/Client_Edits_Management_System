@@ -2,8 +2,12 @@
 
 namespace App\Features\Authentication\Controllers;
 
+use App\Features\Authentication\DTOs\ChangePasswordDTO;
 use App\Features\Authentication\DTOs\LoginDTO;
+use App\Features\Authentication\DTOs\UpdateProfileDTO;
+use App\Features\Authentication\Requests\ChangePasswordRequest;
 use App\Features\Authentication\Requests\LoginRequest;
+use App\Features\Authentication\Requests\UpdateProfileRequest;
 use App\Features\Authentication\Resources\AuthenticatedUserResource;
 use App\Features\Authentication\Services\AuthService;
 use Illuminate\Http\JsonResponse;
@@ -59,5 +63,32 @@ class AuthController extends Controller
         }
 
         return new AuthenticatedUserResource($user);
+    }
+
+    /**
+     * Update the administrator's name and/or email partially.
+     */
+    public function updateProfile(UpdateProfileRequest $request): AuthenticatedUserResource
+    {
+        $dto = new UpdateProfileDTO($request->validated());
+        $updatedUser = $this->authService->updateProfile($request->user(), $dto);
+
+        return new AuthenticatedUserResource($updatedUser);
+    }
+
+    /**
+     * Change the administrator's password after checking the current one.
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $dto = new ChangePasswordDTO(
+            newPassword: $request->validated('new_password'),
+        );
+
+        $this->authService->changePassword($request->user(), $dto);
+
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
     }
 }
